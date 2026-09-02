@@ -19,7 +19,7 @@ mkdir -p "$SDK/examples/resources/heart_catch"
 
 cd "$SDK"
 cargo -Zbuild-std=core,alloc build -p examples --target thumbv4t-none-eabi --features ktf --profile examples --no-default-features --bin heart_catch
-cargo run -p wipi_archiver -- ktf target/thumbv4t-none-eabi/examples/heart_catch Clet 00000000 PD000000 ./examples/resources/heart_catch > /tmp/heart_catch_raw.zip
+cargo run -p wipi-archiver -- ktf target/thumbv4t-none-eabi/examples/heart_catch Clet 00000000 PD000000 ./examples/resources/heart_catch > /tmp/heart_catch_raw.zip
 
 cd - > /dev/null
 python3 - << 'PYEOF'

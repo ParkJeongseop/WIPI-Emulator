@@ -117,11 +117,12 @@ impl App for HeartCatchApp {
 
         fb.fill_rect(0, 0, W, H, BG);
 
-        fb.draw_text(38, 8, "WIPI EMULATOR DEMO", WHITE);
-        fb.draw_text(30, 26, "LEFT/RIGHT: catch hearts!", MINT);
+        // MC_grpDrawString의 y는 베이스라인(글자 하단) — 상단 위치 + 폰트 높이(12)로 지정
+        fb.draw_text(38, 20, "WIPI EMULATOR DEMO", WHITE);
+        fb.draw_text(30, 38, "LEFT/RIGHT: catch hearts!", MINT);
 
-        fb.draw_text(8, 48, &format!("SCORE {}", st.score), CREAM);
-        fb.draw_text(W - 70, 48, &format!("MISS {}", st.missed), CREAM);
+        fb.draw_text(8, 60, &format!("SCORE {}", st.score), CREAM);
+        fb.draw_text(W - 70, 60, &format!("MISS {}", st.missed), CREAM);
 
         // 픽셀 하트 (rect 조합)
         let hx = st.heart_x;
