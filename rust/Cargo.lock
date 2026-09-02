@@ -61,14 +61,15 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.103"
+version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
+checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "arm32_cpu"
 version = "0.1.0"
-source = "git+https://github.com/dlunch/arm32_cpu.git#a98b447314de8abd28a59996f497eb72aaeaa89b"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "359e8364b274abfc953f0b9b0aaf7cf7123cb9a01a6dc92d8c6e1d9439405d60"
 dependencies = [
  "log",
 ]
@@ -81,18 +82,18 @@ checksum = "3b43422f69d8ff38f95f1b2bb76517c91589a924d1559a0e935d7c8ce0274c11"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
 name = "async-trait"
-version = "0.1.89"
+version = "0.1.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9035ad2d096bed7955a320ee7e2230574d28fd3c3a0f186cbea1ff3c7eed5dbb"
+checksum = "82f6aeea286b8eb4dd3431a1be1b59d290ace00f5bfd8e2a159bc2a05e2c1667"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -103,9 +104,9 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "bitflags"
-version = "2.13.0"
+version = "2.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4388bee8683e3d04af747c73422af53102d2bd24d9eadb6cbc100baef4b43f8"
+checksum = "b588b76d00fde79687d7646a9b5bdf3cc0f655e0bbd080335a95d7e96f3587da"
 
 [[package]]
 name = "block2"
@@ -124,22 +125,22 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
 name = "bytemuck"
-version = "1.25.1"
+version = "1.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6aedf8ae72766347502cf3cb4f41cf5e9cc37d28bee90f1fdaaae15f9cf9424"
+checksum = "95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797"
 dependencies = [
  "bytemuck_derive",
 ]
 
 [[package]]
 name = "bytemuck_derive"
-version = "1.10.2"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9abbd1bc6865053c427f7198e6af43bfdedc55ab791faed4fbd361d789575ff"
+checksum = "f65693059b6b9c588b9f62fed1cedbf0a8b805631457ea162d68f0de186f3de5"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -150,9 +151,9 @@ checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
 
 [[package]]
 name = "bytes"
-version = "1.12.0"
+version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ae3f5d315924270530207e2a68396c3cc547f6dca3fbdca317cfb1a51edb593"
+checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
 name = "cesu8"
@@ -177,10 +178,10 @@ dependencies = [
 
 [[package]]
 name = "classfile"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=3b3b8945#3b3b8945fed28169c14f9f72285a1a927281b93c"
+version = "0.1.1"
+source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=e8d9aee#e8d9aee1de94de530ac26e49c0c8be0df2893418"
 dependencies = [
- "java_constants",
+ "jvm-types",
  "nom 8.0.0",
 ]
 
@@ -286,18 +287,18 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.15"
+version = "0.5.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82b8f8f868b36967f9606790d1903570de9ceaf870a7bf9fbbd3016d636a2cb2"
+checksum = "d85363c37faeca707aef026efa9f3b34d077bce547e48f770770625c6013679e"
 dependencies = [
  "crossbeam-utils",
 ]
 
 [[package]]
 name = "crossbeam-deque"
-version = "0.8.6"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dd111b7b7f7d55b72c0a6ae361660ee5853c9af73f70c3c2ef6858b950e2e51"
+checksum = "5181e0de7b61eb03a81e347d6dd8797bae9da5146707b51077e2d71a54ec0ceb"
 dependencies = [
  "crossbeam-epoch",
  "crossbeam-utils",
@@ -305,27 +306,27 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-epoch"
-version = "0.9.18"
+version = "0.9.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b82ac4a3c2ca9c3460964f020e1402edd5753411d7737aa39c3714ad1b5420e"
+checksum = "2d6914041f254d6e9176c01941b21115dcfb7089e55135a35411081bd106ef3f"
 dependencies = [
  "crossbeam-utils",
 ]
 
 [[package]]
 name = "crossbeam-queue"
-version = "0.3.12"
+version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f58bbc28f91df819d0aa2a2c00cd19754769c2fad90579b3592b1c9ba7a3115"
+checksum = "803d13fb3b09d88be9f4dbc29062c66b19bf7170867ceb746d2a8689bf6c7a26"
 dependencies = [
  "crossbeam-utils",
 ]
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.21"
+version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
+checksum = "61803da095bee82a81bb1a452ecc25d3b2f1416d1897eb86430c6159ef717c17"
 
 [[package]]
 name = "dasp_sample"
@@ -351,7 +352,7 @@ checksum = "1ac70aa55017e108007fbaf5aa0f54b021c98f92ff8af59d42eda9da96e3dd4f"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -434,9 +435,9 @@ dependencies = [
 
 [[package]]
 name = "futures"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b147ee9d1f6d097cef9ce628cd2ee62288d963e16fb287bd9286455b241382d"
+checksum = "a88cf1f829d945f548cf8fec32c61b1f202b6d93b45848602fc02af4b12ad218"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -448,9 +449,9 @@ dependencies = [
 
 [[package]]
 name = "futures-channel"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07bbe89c50d7a535e539b8c17bc0b49bdb77747034daa8087407d655f3f7cc1d"
+checksum = "262590f4fe6afeb0bc83be1daa64e52657fe185690a958af7f3ad0e92085c5ae"
 dependencies = [
  "futures-core",
  "futures-sink",
@@ -458,33 +459,33 @@ dependencies = [
 
 [[package]]
 name = "futures-core"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e3450815272ef58cec6d564423f6e755e25379b217b0bc688e295ba24df6b1d"
+checksum = "2cd50c473c80f6d7c3670a752354b8e569b1a7cbfdc0419ec88e5edad85e0dc7"
 
 [[package]]
 name = "futures-io"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cecba35d7ad927e23624b22ad55235f2239cfa44fd10428eecbeba6d6a717718"
+checksum = "4577ecaa3c4f96589d473f679a71b596316f6641bc350038b962a5daf0085d7a"
 
 [[package]]
 name = "futures-sink"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c39754e157331b013978ec91992bde1ac089843443c49cbc7f46150b0fad0893"
+checksum = "e34418ac499d6305c2fb5ad0ed2f6ac998c5f8ca209b4510f7f94242c647e307"
 
 [[package]]
 name = "futures-task"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "037711b3d59c33004d3856fbdc83b99d4ff37a24768fa1be9ce3538a1cde4393"
+checksum = "b231ed28831efb4a61a08580c4bc233ec56bc009f4cd8f52da2c3cb97df0c109"
 
 [[package]]
 name = "futures-util"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "389ca41296e6190b48053de0321d02a77f32f8a5d2461dd38762c0593805c6d6"
+checksum = "a77a90a256fce34da66415271e30f94ee91c57b04b8a2c042d9cf3220179deaa"
 dependencies = [
  "futures-core",
  "futures-sink",
@@ -667,46 +668,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "java_class_proto"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=3b3b8945#3b3b8945fed28169c14f9f72285a1a927281b93c"
-dependencies = [
- "async-trait",
- "dyn-clone",
- "java_constants",
- "jvm",
-]
-
-[[package]]
-name = "java_constants"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=3b3b8945#3b3b8945fed28169c14f9f72285a1a927281b93c"
-dependencies = [
- "bitflags",
-]
-
-[[package]]
-name = "java_runtime"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=3b3b8945#3b3b8945fed28169c14f9f72285a1a927281b93c"
-dependencies = [
- "async-trait",
- "bytemuck",
- "chrono",
- "dyn-clone",
- "encoding_rs",
- "hashbrown",
- "java_class_proto",
- "java_constants",
- "jvm",
- "parking_lot",
- "tracing",
- "tracing-attributes",
- "url",
- "zip",
-]
-
-[[package]]
 name = "jni"
 version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -747,24 +708,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38c0b942f458fe50cdac086d2f946512305e5631e720728f2a61aabcd47a6264"
 dependencies = [
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
 name = "js-sys"
-version = "0.3.103"
+version = "0.3.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53b44bfcdb3f8d5837a46dae1ca9660a837176eee74a28b229bc626816589102"
+checksum = "8c942ebf8e95485ca0d52d97da7c5a2c387d0e7f0ba4c35e93bfcaee045955b3"
 dependencies = [
- "cfg-if",
- "futures-util",
+ "once_cell",
  "wasm-bindgen",
 ]
 
 [[package]]
 name = "jvm"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=3b3b8945#3b3b8945fed28169c14f9f72285a1a927281b93c"
+version = "0.1.1"
+source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=e8d9aee#e8d9aee1de94de530ac26e49c0c8be0df2893418"
 dependencies = [
  "anyhow",
  "async-recursion",
@@ -774,27 +734,46 @@ dependencies = [
  "dyn-hash",
  "event-listener",
  "hashbrown",
- "java_constants",
+ "jvm-types",
  "nom 8.0.0",
  "parking_lot",
  "tracing",
 ]
 
 [[package]]
-name = "jvm_rust"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=3b3b8945#3b3b8945fed28169c14f9f72285a1a927281b93c"
+name = "jvm-bytecode"
+version = "0.1.1"
+source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=e8d9aee#e8d9aee1de94de530ac26e49c0c8be0df2893418"
 dependencies = [
  "async-recursion",
  "async-trait",
  "bytemuck",
  "classfile",
  "dyn-clone",
- "java_class_proto",
- "java_constants",
  "jvm",
+ "jvm-class-proto",
+ "jvm-types",
  "parking_lot",
  "tracing",
+]
+
+[[package]]
+name = "jvm-class-proto"
+version = "0.1.1"
+source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=e8d9aee#e8d9aee1de94de530ac26e49c0c8be0df2893418"
+dependencies = [
+ "async-trait",
+ "dyn-clone",
+ "jvm",
+ "jvm-types",
+]
+
+[[package]]
+name = "jvm-types"
+version = "0.1.1"
+source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=e8d9aee#e8d9aee1de94de530ac26e49c0c8be0df2893418"
+dependencies = [
+ "bitflags",
 ]
 
 [[package]]
@@ -805,9 +784,9 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
-version = "0.2.186"
+version = "0.2.189"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
+checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 
 [[package]]
 name = "libm"
@@ -832,9 +811,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.33"
+version = "0.4.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
+checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
 name = "mach2"
@@ -862,15 +841,15 @@ dependencies = [
 
 [[package]]
 name = "md5"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae960838283323069879657ca3de837e9f7bbb4c7bf6ea7f1b290d5e9476d2e0"
+checksum = "7ebb8d8732c6a6df3d8f032a82911cfc747e00efb95cc46e8d0acd5b5b88570c"
 
 [[package]]
 name = "memchr"
-version = "2.8.2"
+version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88904434abc2901f197fe8cc55f0445e7ded921dba5911dad2e2b39b48e663c4"
+checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "minimal-lexical"
@@ -1004,7 +983,7 @@ checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -1055,7 +1034,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -1256,24 +1235,24 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.106"
+version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
+checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
 ]
 
 [[package]]
 name = "pxfm"
-version = "0.1.29"
+version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0c5ccf5294c6ccd63a74f1565028353830a9c2f5eb0c682c355c471726a6e3f"
+checksum = "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea"
 
 [[package]]
 name = "quote"
-version = "1.0.46"
+version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfbc457d0c7a0759a614551b11a6409e5951f6c7537be1f1b7682b9ae9230368"
+checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
 dependencies = [
  "proc-macro2",
 ]
@@ -1285,6 +1264,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "regex"
+version = "1.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f020237b6c8eed93db2e2cb53c00c60a8e1bc73da7d073199a1180401450218d"
+dependencies = [
+ "regex-automata",
+ "regex-syntax",
 ]
 
 [[package]]
@@ -1313,14 +1302,37 @@ dependencies = [
  "cpal",
  "dasp_sample",
  "num-rational",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
+]
+
+[[package]]
+name = "rustjava-runtime"
+version = "0.1.1"
+source = "git+https://github.com/ParkJeongseop/RustJava.git?rev=e8d9aee#e8d9aee1de94de530ac26e49c0c8be0df2893418"
+dependencies = [
+ "async-trait",
+ "bytemuck",
+ "chrono",
+ "dyn-clone",
+ "encoding_rs",
+ "hashbrown",
+ "jvm",
+ "jvm-class-proto",
+ "jvm-types",
+ "libm",
+ "parking_lot",
+ "regex",
+ "tracing",
+ "tracing-attributes",
+ "url",
+ "zip",
 ]
 
 [[package]]
 name = "rustversion"
-version = "1.0.22"
+version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
+checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "rustysynth"
@@ -1345,9 +1357,9 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "serde"
-version = "1.0.228"
+version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
+checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
 dependencies = [
  "serde_core",
  "serde_derive",
@@ -1355,22 +1367,22 @@ dependencies = [
 
 [[package]]
 name = "serde_core"
-version = "1.0.228"
+version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad"
+checksum = "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.228"
+version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
+checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -1393,9 +1405,9 @@ dependencies = [
 
 [[package]]
 name = "simd-adler32"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "703d5c7ef118737c72f1af64ad2f6f8c5e1921f818cdcb97b8fe6fc69bf66214"
+checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 
 [[package]]
 name = "slab"
@@ -1405,8 +1417,9 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "smaf"
-version = "0.1.0"
-source = "git+https://github.com/dlunch/smaf.git#5d0abbc86ae6408242addbb47604d6b53b5df662"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72e5d7afe0fc44f5eda077e8419fb8856401ebdfb8e908991bff57cfc6a654a1"
 dependencies = [
  "anyhow",
  "nom 7.1.3",
@@ -1414,9 +1427,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "smaf_player"
-version = "0.1.0"
-source = "git+https://github.com/dlunch/smaf.git#5d0abbc86ae6408242addbb47604d6b53b5df662"
+name = "smaf-player"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "161bce0729a06bc68e2a3fa342811590f4bfd5875bcd00662013b592f97e6246"
 dependencies = [
  "smaf",
 ]
@@ -1429,9 +1443,9 @@ checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 
 [[package]]
 name = "spin"
-version = "0.12.2"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8abadc99fd9c7bbb7d0ca2b31d72a067d0c0dcd7aad25ab8cac71ba91417694b"
+checksum = "0134f9043ed38b087ac4f7d4af44c79e2c9e5094421fe3164f435ce585953b10"
 
 [[package]]
 name = "stable_deref_trait"
@@ -1452,9 +1466,20 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.118"
+version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b9ae57f904213ebb649ce6895b8a66c66f0203b9319718f69a5612a065b1422"
+checksum = "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "syn"
+version = "3.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53e9bae58849f64dfa4f5d5ae372c8341f7305f82a3868709269343628b659a3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1469,7 +1494,7 @@ checksum = "728a70f3dbaf5bab7f0c4b1ac8d7ae5ea60a4b5549c8a5914361c99147a709d2"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -1483,11 +1508,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.18"
+version = "2.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4288b5bcbc7920c07a1149a35cf9590a2aa808e0bc1eafaade0b80947865fbc4"
+checksum = "09a43598840e33d5b0331f38c5e30d13bb11c11210a4b58f0d9b18a5a5eefcd9"
 dependencies = [
- "thiserror-impl 2.0.18",
+ "thiserror-impl 2.0.19",
 ]
 
 [[package]]
@@ -1498,18 +1523,18 @@ checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.18"
+version = "2.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebc4ee7f67670e9b64d05fa4253e753e016c6c95ff35b89b7941d6b856dec1d5"
+checksum = "43cbfe0cf76104d42a574802844187e84a305e531ed54455f11fbde0f10541cd"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -1533,9 +1558,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "1.1.2+spec-1.1.0"
+version = "1.1.3+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81f3d15e84cbcd896376e6730314d59fb5a87f31e4b038454184435cd57defee"
+checksum = "53c96ecdfa941c8fc4fcaed14f99ada8ebed502eef533015095a07e3301d4c3c"
 dependencies = [
  "serde_core",
  "serde_spanned",
@@ -1593,7 +1618,7 @@ checksum = "395ae124c09f9e6918a2310af6038fba074bcf474ac352496d5910dd59a2226d"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -1691,9 +1716,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.126"
+version = "0.2.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b067c0c11094aef6b7a801c1e34a26affafdf3d051dba08456b868789aaf9a4"
+checksum = "64024a30ec1e37399cf85a7ffefebdb72205ca1c972291c51512360d90bd8566"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -1704,19 +1729,23 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-futures"
-version = "0.4.76"
+version = "0.4.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c62df1340f32221cb9c54d6a27b030e3dba64361d4a95bed55f9aacb44da291d"
+checksum = "70a6e77fd0ae8029c9ea0063f87c46fde723e7d887703d74ad2616d792e51e6f"
 dependencies = [
+ "cfg-if",
+ "futures-util",
  "js-sys",
+ "once_cell",
  "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.126"
+version = "0.2.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "167ce5e579f6bcf889c4f7175a8a5a585de84e8ff93976ce393efa5f2837aab1"
+checksum = "008b239d9c740232e71bd39e8ef6429d27097518b6b30bdf9086833bd5b6d608"
 dependencies = [
  "quote",
  "wasm-bindgen-macro-support",
@@ -1724,31 +1753,31 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.126"
+version = "0.2.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3997c7839262f4ef12cf90b818d6340c18e80f263f1a94bf157d0ec4420380e"
+checksum = "5256bae2d58f54820e6490f9839c49780dff84c65aeab9e772f15d5f0e913a55"
 dependencies = [
  "bumpalo",
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
  "wasm-bindgen-shared",
 ]
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.126"
+version = "0.2.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc1b4cb0cc549fcf58d7dfc081778139b3d283a081644e833e84682ad71cea24"
+checksum = "1f01b580c9ac74c8d8f0c0e4afb04eeef2acf145458e52c03845ee9cd23e3d12"
 dependencies = [
  "unicode-ident",
 ]
 
 [[package]]
 name = "web-sys"
-version = "0.3.103"
+version = "0.3.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8622dcb61c0bcc9fffa6938bed81210af2da9a7e4a1a834b2e37a59b6dfb6141"
+checksum = "312e32e551d92129218ea9a2452120f4aabc03529ef03e4d0d82fb2780608598"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -1761,9 +1790,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
 
 [[package]]
-name = "wie_backend"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-backend"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "ab_glyph",
  "async-trait",
@@ -1773,17 +1802,17 @@ dependencies = [
  "lazy_static",
  "num-traits",
  "smaf",
- "smaf_player",
+ "smaf-player",
  "spin",
  "tracing",
- "wie_util",
+ "wie-util",
  "zip",
 ]
 
 [[package]]
-name = "wie_core_arm"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-core-arm"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "arm32_cpu",
  "async-trait",
@@ -1796,46 +1825,46 @@ dependencies = [
  "spin",
  "toml",
  "tracing",
- "wie_backend",
- "wie_util",
+ "wie-backend",
+ "wie-util",
 ]
 
 [[package]]
-name = "wie_j2me"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-j2me"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-trait",
  "bytemuck",
  "jvm",
  "tracing",
- "wie_backend",
- "wie_jvm_support",
- "wie_midp",
- "wie_util",
+ "wie-backend",
+ "wie-jvm-support",
+ "wie-midp",
+ "wie-util",
 ]
 
 [[package]]
-name = "wie_jvm_support"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-jvm-support"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-trait",
  "bytemuck",
- "java_class_proto",
- "java_runtime",
  "jvm",
- "jvm_rust",
+ "jvm-bytecode",
+ "jvm-class-proto",
+ "rustjava-runtime",
  "spin",
  "tracing",
- "wie_backend",
- "wie_util",
+ "wie-backend",
+ "wie-util",
 ]
 
 [[package]]
-name = "wie_ktf"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-ktf"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-recursion",
  "async-trait",
@@ -1843,26 +1872,26 @@ dependencies = [
  "bytemuck",
  "encoding_rs",
  "futures",
- "java_class_proto",
- "java_constants",
- "java_runtime",
  "jvm",
+ "jvm-class-proto",
+ "jvm-types",
+ "rustjava-runtime",
  "spin",
  "tracing",
- "wie_backend",
- "wie_core_arm",
- "wie_jvm_support",
- "wie_midp",
- "wie_util",
- "wie_wipi_c",
- "wie_wipi_java",
- "wipi_types",
+ "wie-backend",
+ "wie-core-arm",
+ "wie-jvm-support",
+ "wie-midp",
+ "wie-util",
+ "wie-wipi-c",
+ "wie-wipi-java",
+ "wipi-types",
 ]
 
 [[package]]
-name = "wie_lgt"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-lgt"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-trait",
  "bytemuck",
@@ -1870,84 +1899,87 @@ dependencies = [
  "elf",
  "encoding_rs",
  "futures",
- "java_class_proto",
- "java_constants",
- "java_runtime",
  "jvm",
- "jvm_rust",
+ "jvm-class-proto",
+ "jvm-types",
+ "lazy_static",
+ "rustjava-runtime",
+ "serde",
  "spin",
+ "toml",
  "tracing",
- "wie_backend",
- "wie_core_arm",
- "wie_jvm_support",
- "wie_midp",
- "wie_util",
- "wie_wipi_c",
- "wie_wipi_java",
- "wipi_types",
+ "wie-backend",
+ "wie-core-arm",
+ "wie-jvm-support",
+ "wie-midp",
+ "wie-util",
+ "wie-wipi-c",
+ "wie-wipi-java",
+ "wipi-types",
 ]
 
 [[package]]
-name = "wie_midp"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-midp"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-trait",
  "bitflags",
  "bytemuck",
  "dyn-clone",
  "futures",
- "java_class_proto",
- "java_constants",
- "java_runtime",
  "jvm",
+ "jvm-class-proto",
+ "jvm-types",
+ "rustjava-runtime",
  "tracing",
- "wie_backend",
- "wie_jvm_support",
- "wie_util",
+ "wie-backend",
+ "wie-jvm-support",
+ "wie-util",
 ]
 
 [[package]]
-name = "wie_skt"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-skt"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-trait",
  "bytemuck",
+ "encoding_rs",
  "jvm",
  "tracing",
- "wie_backend",
- "wie_jvm_support",
- "wie_midp",
- "wie_skvm",
- "wie_util",
- "wie_wipi_java",
+ "wie-backend",
+ "wie-jvm-support",
+ "wie-midp",
+ "wie-skvm",
+ "wie-util",
+ "wie-wipi-java",
 ]
 
 [[package]]
-name = "wie_skvm"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-skvm"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-trait",
  "bitflags",
  "bytemuck",
  "dyn-clone",
  "encoding_rs",
- "java_class_proto",
- "java_constants",
- "java_runtime",
  "jvm",
+ "jvm-class-proto",
+ "jvm-types",
+ "rustjava-runtime",
  "tracing",
- "wie_backend",
- "wie_jvm_support",
- "wie_midp",
+ "wie-backend",
+ "wie-jvm-support",
+ "wie-midp",
 ]
 
 [[package]]
-name = "wie_util"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-util"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "bytemuck",
  "tracing",
@@ -1955,35 +1987,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "wie_wipi_c"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-wipi-c"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-trait",
  "bytemuck",
  "encoding_rs",
  "tracing",
- "wie_backend",
- "wie_util",
- "wipi_types",
+ "wie-backend",
+ "wie-util",
+ "wipi-types",
 ]
 
 [[package]]
-name = "wie_wipi_java"
-version = "0.0.1"
-source = "git+https://github.com/ParkJeongseop/wie.git?rev=0e4be660#0e4be6605f9b4bd0d53c10a83da3b0651166d899"
+name = "wie-wipi-java"
+version = "0.1.0"
+source = "git+https://github.com/ParkJeongseop/wie.git?rev=969891b3#969891b3841166d2a07072c7a4b75e1aa53a3762"
 dependencies = [
  "async-trait",
  "bitflags",
  "bytemuck",
- "java_class_proto",
- "java_constants",
- "java_runtime",
  "jvm",
+ "jvm-class-proto",
+ "jvm-types",
+ "rustjava-runtime",
  "tracing",
- "wie_backend",
- "wie_jvm_support",
- "wie_midp",
+ "wie-backend",
+ "wie-jvm-support",
+ "wie-midp",
 ]
 
 [[package]]
@@ -2048,7 +2080,7 @@ checksum = "053e2e040ab57b9dc951b72c264860db7eb3b0200ba345b4e4c3b14f67855ddf"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -2059,7 +2091,7 @@ checksum = "3f316c4a2570ba26bbec722032c4099d8c8bc095efccdc15688708623367e358"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -2182,11 +2214,21 @@ checksum = "9aec5da331524158c6d1a4ac0ab1541149c0b9505fde06423b02f5ef0106b9f0"
 
 [[package]]
 name = "winnow"
-version = "1.0.3"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0592e1c9d151f854e6fd382574c3a0855250e1d9b2f99d9281c6e6391af352f1"
+checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "wipi-types"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ae8e36c0e344c9687be257c923352fe2de3d160b828f2e622d404d155bc8de0"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
 ]
 
 [[package]]
@@ -2199,7 +2241,7 @@ dependencies = [
  "paranoid-android",
  "tracing",
  "tracing-subscriber",
- "wie_backend",
+ "wie-backend",
  "wipi_core",
 ]
 
@@ -2212,12 +2254,12 @@ dependencies = [
  "rodio",
  "rustysynth",
  "tracing",
- "wie_backend",
- "wie_j2me",
- "wie_ktf",
- "wie_lgt",
- "wie_skt",
- "wie_util",
+ "wie-backend",
+ "wie-j2me",
+ "wie-ktf",
+ "wie-lgt",
+ "wie-skt",
+ "wie-util",
 ]
 
 [[package]]
@@ -2228,15 +2270,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "wipi_core",
-]
-
-[[package]]
-name = "wipi_types"
-version = "0.0.1"
-source = "git+https://github.com/dlunch/wipi.git#1e0c634e7305c1a04ce074aac5e9e27a0930b630"
-dependencies = [
- "bytemuck",
- "cfg-if",
 ]
 
 [[package]]
@@ -2264,7 +2297,7 @@ checksum = "de844c262c8848816172cef550288e7dc6c7b7814b4ee56b3e1553f275f1858e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
  "synstructure",
 ]
 
@@ -2285,7 +2318,7 @@ checksum = "11532158c46691caf0f2593ea8358fed6bbf68a0315e80aae9bd41fbade684a1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
  "synstructure",
 ]
 
@@ -2319,7 +2352,7 @@ checksum = "625dc425cab0dca6dc3c3319506e6593dcb08a9f387ea3b284dbd52a92c40555"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.118",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -2338,9 +2371,9 @@ dependencies = [
 
 [[package]]
 name = "zlib-rs"
-version = "0.6.4"
+version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "977347db8caa080403f6b6b7c1cda9479a8e869316f7e13a59b19076a40f94e3"
+checksum = "b142a20ec14a91d5bc708c1dc21b080c550113d8aa77afa29635673a65dd02c5"
 
 [[package]]
 name = "zopfli"

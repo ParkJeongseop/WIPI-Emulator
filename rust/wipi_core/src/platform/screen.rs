@@ -49,6 +49,12 @@ impl CaptureScreen {
 }
 
 impl Screen for CaptureScreen {
+    fn resize(&self, width: u32, height: u32) -> Result<()> {
+        // 모바일 화면은 고정 크기 프레임 캡처라 게임의 리사이즈 요청은 적용하지 않는다.
+        tracing::debug!("screen resize request ignored: {width}x{height}");
+        Ok(())
+    }
+
     fn request_redraw(&self) -> Result<()> {
         self.redraw_requested.store(true, Ordering::SeqCst);
         Ok(())
