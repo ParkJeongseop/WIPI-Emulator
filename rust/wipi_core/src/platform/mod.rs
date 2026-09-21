@@ -11,7 +11,7 @@ use std::{
     },
 };
 
-use wie_backend::{Filesystem, Instant, Platform, Screen};
+use wie_backend::{Filesystem, Instant, Platform, Screen, canvas::Font};
 
 use screen::CaptureScreen;
 pub use screen::CapturedFrame;
@@ -26,6 +26,8 @@ pub struct VibrationRequest {
 /// Host platform for mobile targets (and headless testing). All persistent
 /// state lives under `base_path` (filesDir on Android, Documents on iOS).
 pub struct MobilePlatform {
+    /// 게임 텍스트 렌더링용 폰트 (wie 데스크톱과 동일한 neodgm — 글자 규격 12px 기준).
+    font: Font,
     screen: CaptureScreen,
     filesystem: filesystem::FsFilesystem,
     database_repository: database::FsDatabaseRepository,
@@ -42,6 +44,7 @@ pub struct MobilePlatform {
 impl MobilePlatform {
     pub fn new(base_path: PathBuf, width: u32, height: u32, soundfont_path: Option<PathBuf>) -> Self {
         Self {
+            font: Font::try_from_static(include_bytes!("../../assets/neodgm.ttf")).expect("bundled font"),
             screen: CaptureScreen::new(width, height),
             filesystem: filesystem::FsFilesystem::new(base_path.join("fs")),
             database_repository: database::FsDatabaseRepository::new(base_path.join("db")),
@@ -91,6 +94,9 @@ impl MobilePlatform {
 pub struct SharedPlatform(pub std::sync::Arc<MobilePlatform>);
 
 impl Platform for SharedPlatform {
+    fn font(&self) -> &Font {
+        self.0.font()
+    }
     fn screen(&self) -> &dyn Screen {
         self.0.screen()
     }
@@ -121,6 +127,10 @@ impl Platform for SharedPlatform {
 }
 
 impl Platform for MobilePlatform {
+    fn font(&self) -> &Font {
+        &self.font
+    }
+
     fn screen(&self) -> &dyn Screen {
         &self.screen
     }

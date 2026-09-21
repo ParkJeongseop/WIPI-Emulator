@@ -9,7 +9,7 @@
 - **wie 소비 전략**(2026-07-21 갱신): 본인 포크 **ParkJeongseop/wie** + rev 고정으로 소비.
   - 포크 main은 upstream(dlunch/wie) 추적, 기능은 브랜치로 작업 → upstream PR + 앱은 포크 rev 갱신으로 먼저 적용.
   - upstream 머지 후엔 해당 upstream rev로 복귀 (포크는 "미머지 델타"만 담는 얇은 층 유지 — 하드포크 금지).
-  - 현재 rev: 969891b3 (sync/upstream-2026-09 — upstream 2026-09 동기화+우리 델타). 로컬 ../wie 클론은 코어 디버깅 시 path 전환용.
+  - 현재 rev: 325b6171 (sync/upstream-2026-09-21 — upstream v0.1.4 동기화+우리 델타). 로컬 ../wie 클론은 코어 디버깅 시 path 전환용.
 - **FFI는 wie_app의 WieWeb 4-메서드 모델**을 따름: start / getFrame(폴링) / keyDown / keyUp.
   콜백 없음 — UI가 60fps로 프레임을 폴링. 키코드는 문자열("UP","OK","1","*","SOFT_L"...).
 - **라이선스**: wie·RustJava·smaf·wipi 전부 MIT (저작권자 Inseok Lee). 고지 의무만 있음.
@@ -99,7 +99,7 @@ xcrun simctl launch --console-pty "iPhone 17" com.parkjeongseop.wipi   # --conso
 ## 함정 모음 (시간 아끼는 지식)
 
 - **Cargo.lock**: wie/Cargo.lock을 복사해 시드로 사용(버전 정렬). RustJava는 crates.io +
-  [patch.crates-io]로 포크 rev 고정(e8d9aee) — **wie와 앱의 patch 섹션을 항상 일치**시킬 것.
+  [patch.crates-io]로 포크 rev 고정(f414a98, RustJava 0.2.0 기반) — **wie와 앱의 patch 섹션을 항상 일치**시킬 것.
 - **logcat TRACE 로그 = 에뮬레이션 수십 배 감속**. nativeInit에서 EnvFilter "info" 고정.
 - **cpal(AAudio)**: ①링커가 android26+ 이어야 함(-laaudio) ②ndk-context 초기화 필수 —
   일반 JNI 앱은 자동 초기화가 없어서 nativeInit(context)에서 initialize_android_context() 호출.
