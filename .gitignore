@@ -22,6 +22,8 @@ app_screen*.png
 ios/WipiEmulator.xcodeproj/
 ios/build/
 ios/build-device/
+ios/build-archive/
+ios/build-export/
 ios/WipiEmulator/Info.plist
 
 # Android 서명 (절대 커밋 금지 — 앱 신원)
