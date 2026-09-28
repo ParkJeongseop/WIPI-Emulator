@@ -28,8 +28,8 @@ targets:
         TARGETED_DEVICE_FAMILY: 1
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.1.0"       # Android versionName과 통일
-        CURRENT_PROJECT_VERSION: "1"     # Android versionCode와 통일
+        MARKETING_VERSION: "0.3.0"       # Android versionName과 통일
+        CURRENT_PROJECT_VERSION: "5"     # Android versionCode와 통일
         # 실기기: 자동 서명 (Personal Team). 시뮬레이터는 서명 불필요.
         DEVELOPMENT_TEAM: 7WYMPDQCGP
         CODE_SIGN_STYLE: Automatic
@@ -38,8 +38,8 @@ targets:
       path: WipiEmulator/Info.plist
       properties:
         CFBundleDisplayName: WIPI Emulator
-        CFBundleShortVersionString: "0.2.0"   # Android versionName과 통일
-        CFBundleVersion: "4"
+        CFBundleShortVersionString: "0.3.0"   # Android versionName과 통일
+        CFBundleVersion: "5"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         # 파일 앱/iTunes에서 게임 파일을 넣을 수 있게 (게임은 사용자 임포트만 — 앱스토어 4.7 대응)
