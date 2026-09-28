@@ -271,7 +271,7 @@ fn cleanup(synth: &Option<Arc<Mutex<Synthesizer>>>, playback: &mut Playback) {
         for channel in &playback.used_channels {
             // sustain 해제 + all sound/notes off
             for control in [64, 120, 123] {
-                synth.process_midi_message(*channel as i32, 0xb0, control as i32, 0);
+                synth.process_midi_message(*channel as i32, 0xb0, control, 0);
             }
         }
     }
