@@ -9,7 +9,7 @@
 - **wie 소비 전략**(2026-07-21 갱신): 본인 포크 **ParkJeongseop/wie** + rev 고정으로 소비.
   - 포크 main은 upstream(dlunch/wie) 추적, 기능은 브랜치로 작업 → upstream PR + 앱은 포크 rev 갱신으로 먼저 적용.
   - upstream 머지 후엔 해당 upstream rev로 복귀 (포크는 "미머지 델타"만 담는 얇은 층 유지 — 하드포크 금지).
-  - 현재 rev: 58e7fdcd (sync/upstream-2026-09-21 — upstream v0.1.4 동기화+우리 델타, LGT strncat·util·stdlib·LWC, SK-VM 키코드·프로퍼티, LBMP 마스크·그레이, LGT DrawString y=top). 로컬 ../wie 클론은 코어 디버깅 시 path 전환용.
+  - 현재 rev: b75a03c1 (sync/upstream-2026-09-21 — upstream v0.1.4 동기화+우리 델타, LGT strncat·util·stdlib·LWC·MC_im, SK-VM 키코드·프로퍼티, LBMP 마스크·그레이, LGT DrawString y=top). 로컬 ../wie 클론은 코어 디버깅 시 path 전환용.
 - **FFI는 wie_app의 WieWeb 4-메서드 모델**을 따름: start / getFrame(폴링) / keyDown / keyUp.
   콜백 없음 — UI가 60fps로 프레임을 폴링. 키코드는 문자열("UP","OK","1","*","SOFT_L"...).
 - **라이선스**: wie·RustJava·smaf·wipi 전부 MIT (저작권자 Inseok Lee). 고지 의무만 있음.
