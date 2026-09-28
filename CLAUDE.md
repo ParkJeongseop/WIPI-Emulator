@@ -9,7 +9,7 @@
 - **wie 소비 전략**(2026-07-21 갱신): 본인 포크 **ParkJeongseop/wie** + rev 고정으로 소비.
   - 포크 main은 upstream(dlunch/wie) 추적, 기능은 브랜치로 작업 → upstream PR + 앱은 포크 rev 갱신으로 먼저 적용.
   - upstream 머지 후엔 해당 upstream rev로 복귀 (포크는 "미머지 델타"만 담는 얇은 층 유지 — 하드포크 금지).
-  - 현재 rev: 46152132 (sync/upstream-2026-09-21 — upstream v0.1.4 동기화+우리 델타, LGT strncat·util·stdlib·LWC, LBMP 마스크·그레이, LGT DrawString y=top). 로컬 ../wie 클론은 코어 디버깅 시 path 전환용.
+  - 현재 rev: 58e7fdcd (sync/upstream-2026-09-21 — upstream v0.1.4 동기화+우리 델타, LGT strncat·util·stdlib·LWC, SK-VM 키코드·프로퍼티, LBMP 마스크·그레이, LGT DrawString y=top). 로컬 ../wie 클론은 코어 디버깅 시 path 전환용.
 - **FFI는 wie_app의 WieWeb 4-메서드 모델**을 따름: start / getFrame(폴링) / keyDown / keyUp.
   콜백 없음 — UI가 60fps로 프레임을 폴링. 키코드는 문자열("UP","OK","1","*","SOFT_L"...).
 - **라이선스**: wie·RustJava·smaf·wipi 전부 MIT (저작권자 Inseok Lee). 고지 의무만 있음.
@@ -30,6 +30,7 @@ wie-mobile/
 │  │  └─ src/platform/      # MobilePlatform: screen(프레임캡처)/filesystem/database(wie_cli 이식)/audio
 │  ├─ wipi_android/          # JNI 브리지 (Java_com_parkjeongseop_wipi_WipiNative_*) — session의 얇은 래퍼
 │  │  └─ src/bin/headless.rs # UI 없이 검증하는 테스트 하니스 (프레임을 BMP로 덤프, macOS에서도 실행 가능)
+│  │                        #   종료 시 "STUBS: <API>x<횟수> …" 한 줄로 미구현 API 호출 집계(RUST_LOG 무관)
 │  └─ wipi_ios/              # C ABI 브리지 (wipi_init/start/get_frame/key_down/key_up/get_error/stop)
 │     └─ include/wipi_ios.h  # 수기 관리 헤더 (Swift 브리징 헤더가 include)
 ├─ android/                 # Gradle 프로젝트 (AGP 8.10.1, Kotlin 2.1.21, Compose)

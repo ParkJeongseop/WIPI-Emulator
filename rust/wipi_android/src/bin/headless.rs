@@ -3,7 +3,15 @@
 //!
 //! Usage: headless <game file> <output bmp> [ticks]
 
-use std::{fs, io::Write, path::PathBuf, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    fs,
+    io::Write,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
+
+use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 use wie_backend::{Event, KeyCode};
 
@@ -56,10 +64,44 @@ fn parse_key_script(spec: &str) -> Vec<(u64, KeyCode, bool)> {
     script
 }
 
+/// Counts every `stub …` / `Unimplemented` / `Unknown …` warning by API name so a
+/// sweep can list what a game reached that we do not implement, independent of RUST_LOG.
+#[derive(Default, Clone)]
+struct StubCounter(Arc<Mutex<BTreeMap<String, u64>>>);
+
+impl<S: tracing::Subscriber> Layer<S> for StubCounter {
+    fn on_event(&self, event: &tracing::Event<'_>, _: tracing_subscriber::layer::Context<'_, S>) {
+        struct Message(Option<String>);
+        impl tracing::field::Visit for Message {
+            fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+                if field.name() == "message" {
+                    self.0 = Some(format!("{value:?}"));
+                }
+            }
+        }
+        let mut message = Message(None);
+        event.record(&mut message);
+        let Some(message) = message.0 else { return };
+        let name = if let Some(rest) = message.strip_prefix("stub ") {
+            rest.split(['(', ' ', ':']).next().unwrap_or(rest).to_string()
+        } else if message.starts_with("Unimplemented") || message.starts_with("Unknown") {
+            message.chars().take(80).collect()
+        } else {
+            return;
+        };
+        *self.0.lock().unwrap().entry(name).or_default() += 1;
+    }
+}
+
 fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_writer(std::io::stderr)
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+    let stub_counter = StubCounter::default();
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(std::io::stderr)
+                .with_filter(tracing_subscriber::EnvFilter::from_default_env()),
+        )
+        .with(stub_counter.clone().with_filter(tracing_subscriber::filter::LevelFilter::WARN))
         .init();
 
     let args: Vec<String> = std::env::args().collect();
@@ -132,6 +174,16 @@ fn main() -> anyhow::Result<()> {
             } else {
                 eprintln!("t={saved_seconds}s ticks={ticks} (no frame painted yet)");
             }
+        }
+    }
+
+    // 미구현 API 요약 — 스윕이 "어떤 API가 부족한지"를 게임별로 바로 보이게 한다
+    {
+        let stubs = stub_counter.0.lock().unwrap();
+        if !stubs.is_empty() {
+            let mut sorted: Vec<_> = stubs.iter().collect();
+            sorted.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
+            eprintln!("STUBS: {}", sorted.iter().map(|(k, v)| format!("{k}x{v}")).collect::<Vec<_>>().join(" "));
         }
     }
 
