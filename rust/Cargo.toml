@@ -9,12 +9,12 @@ members = ["wipi_android", "wipi_core", "wipi_ios"]
 # 현재 rev: b75a03c1 (sync/upstream-2026-09-21 — upstream v0.1.4 병합 + LGT strncat·util·stdlib·LWC·MC_im + SK-VM 키코드 + LBMP 마스크/그레이 + LGT 텍스트 원점: 플랫폼 제공 폰트(Platform::font),
 # RustJava 0.2.0(+포크 patch f414a98), KTF native ABI·LGT 수정. 우리 델타: BMP 색상키 투명,
 # 폰트 메트릭·베이스라인 DrawString(draw_text size 인자 유지), KTF 이름 tag 해시, MIDlet 시스템로더 로드)
-wie_backend = { package = "wie-backend", git = "https://github.com/ParkJeongseop/wie.git", rev = "e6764d18" }
-wie_ktf = { package = "wie-ktf", git = "https://github.com/ParkJeongseop/wie.git", rev = "e6764d18" }
-wie_lgt = { package = "wie-lgt", git = "https://github.com/ParkJeongseop/wie.git", rev = "e6764d18" }
-wie_skt = { package = "wie-skt", git = "https://github.com/ParkJeongseop/wie.git", rev = "e6764d18" }
-wie_j2me = { package = "wie-j2me", git = "https://github.com/ParkJeongseop/wie.git", rev = "e6764d18" }
-wie_util = { package = "wie-util", git = "https://github.com/ParkJeongseop/wie.git", rev = "e6764d18" }
+wie_backend = { package = "wie-backend", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
+wie_ktf = { package = "wie-ktf", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
+wie_lgt = { package = "wie-lgt", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
+wie_skt = { package = "wie-skt", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
+wie_j2me = { package = "wie-j2me", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
+wie_util = { package = "wie-util", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
 
 [profile.release]
 lto = true
