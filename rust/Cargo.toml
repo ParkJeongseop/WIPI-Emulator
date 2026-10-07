@@ -6,15 +6,15 @@ members = ["wipi_android", "wipi_core", "wipi_ios"]
 # wie 코어는 본인 포크(ParkJeongseop/wie) + rev 고정으로 소비 — 미머지 개선을 앱에 먼저 적용하기 위함.
 # 원칙: 포크의 main은 upstream(dlunch/wie) 추적, 기능은 브랜치로 작업해 upstream PR + 앱용 rev 갱신.
 # upstream 머지 후엔 해당 rev로 복귀. 코어 디버깅 시엔 임시로 path = "../../wie/..." 전환.
-# 현재 rev: b75a03c1 (sync/upstream-2026-09-21 — upstream v0.1.4 병합 + LGT strncat·util·stdlib·LWC·MC_im + SK-VM 키코드 + LBMP 마스크/그레이 + LGT 텍스트 원점: 플랫폼 제공 폰트(Platform::font),
-# RustJava 0.2.0(+포크 patch f414a98), KTF native ABI·LGT 수정. 우리 델타: BMP 색상키 투명,
-# 폰트 메트릭·베이스라인 DrawString(draw_text size 인자 유지), KTF 이름 tag 해시, MIDlet 시스템로더 로드)
-wie_backend = { package = "wie-backend", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
-wie_ktf = { package = "wie-ktf", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
-wie_lgt = { package = "wie-lgt", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
-wie_skt = { package = "wie-skt", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
-wie_j2me = { package = "wie-j2me", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
-wie_util = { package = "wie-util", git = "https://github.com/ParkJeongseop/wie.git", rev = "dbe4196a" }
+# 현재 rev: 58c8b935 (sync/upstream-2026-09-21 — upstream v0.1.4 병합 + LGT strncat·util·stdlib·LWC·MC_im + SK-VM 키코드 + LBMP 마스크/그레이 + LGT 텍스트 원점: 플랫폼 제공 폰트(Platform::font),
+# RustJava 0.2.0(+포크 patch 831d979), KTF native ABI·LGT 수정, LGT ez-java(MMPP, JAD+JAR 아카이브), MIDP repaint·showNotify 수정.
+# 우리 델타: BMP 색상키 투명, 폰트 메트릭·베이스라인 DrawString(draw_text size 인자 유지), KTF 이름 tag 해시, MIDlet 시스템로더 로드)
+wie_backend = { package = "wie-backend", git = "https://github.com/ParkJeongseop/wie.git", rev = "58c8b935" }
+wie_ktf = { package = "wie-ktf", git = "https://github.com/ParkJeongseop/wie.git", rev = "58c8b935" }
+wie_lgt = { package = "wie-lgt", git = "https://github.com/ParkJeongseop/wie.git", rev = "58c8b935" }
+wie_skt = { package = "wie-skt", git = "https://github.com/ParkJeongseop/wie.git", rev = "58c8b935" }
+wie_j2me = { package = "wie-j2me", git = "https://github.com/ParkJeongseop/wie.git", rev = "58c8b935" }
+wie_util = { package = "wie-util", git = "https://github.com/ParkJeongseop/wie.git", rev = "58c8b935" }
 
 [profile.release]
 lto = true
@@ -27,8 +27,8 @@ lto = "off"
 
 # RustJava는 wie와 동일하게 crates.io + 포크 패치(rev 고정)로 소비 — wie의 [patch]와 반드시 일치시킬 것.
 [patch.crates-io]
-jvm = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "f414a98" }
-jvm-bytecode = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "f414a98" }
-jvm-class-proto = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "f414a98" }
-jvm-types = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "f414a98" }
-rustjava-runtime = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "f414a98" }
+jvm = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "831d979" }
+jvm-bytecode = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "831d979" }
+jvm-class-proto = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "831d979" }
+jvm-types = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "831d979" }
+rustjava-runtime = { git = "https://github.com/ParkJeongseop/RustJava.git", rev = "831d979" }

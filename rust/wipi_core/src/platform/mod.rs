@@ -1,6 +1,7 @@
 mod audio;
 mod database;
 mod filesystem;
+mod lcd;
 mod screen;
 
 use std::{
@@ -13,6 +14,7 @@ use std::{
 
 use wie_backend::{Filesystem, Instant, Platform, Screen, canvas::Font};
 
+pub use lcd::LcdPlatform;
 use screen::CaptureScreen;
 pub use screen::CapturedFrame;
 

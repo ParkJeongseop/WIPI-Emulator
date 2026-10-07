@@ -33,6 +33,16 @@ pub fn extract_metadata(buf: &[u8]) -> GameMetadata {
         };
     };
 
+    // ez-java(JAD+JAR) 패키지: 이름은 JAD의 MIDlet-Name(UTF-8), 아이콘은 JAR 안의 PNG.
+    // 호스트는 이름을 EUC-KR로 디코딩하므로 여기서 맞춰 인코딩한다. 판별 순서는 create_emulator와 같다.
+    let other_platform = KtfEmulator::loadable_archive(&files) || LgtEmulator::loadable_archive(&files) || SktEmulator::loadable_archive(&files);
+    if !other_platform && J2MEEmulator::loadable_archive(&files) {
+        return GameMetadata {
+            name_euckr: J2MEEmulator::archive_title(&files).map(|title| encoding_rs::EUC_KR.encode(&title).0.into_owned()),
+            icon_png: J2MEEmulator::archive_icon(&files),
+        };
+    }
+
     let icon_png = ["big.icon", "middle.icon", "small.icon"]
         .iter()
         .find_map(|name| files.get(*name))
@@ -94,6 +104,10 @@ pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8]) 
             Ok(Box::new(LgtEmulator::from_archive(platform, files, options)?))
         } else if SktEmulator::loadable_archive(&files) {
             Ok(Box::new(SktEmulator::from_archive(platform, files)?))
+        } else if J2MEEmulator::loadable_archive(&files) {
+            // ez-java(JAD+JAR): 디스크립터가 정한 LCD 크기로 돌리고 고정 프레임에 맞춰 보여준다.
+            let platform = Box::new(platform::LcdPlatform::new(platform));
+            Ok(Box::new(J2MEEmulator::from_archive(platform, files)?))
         } else {
             anyhow::bail!("Unknown archive format")
         }

@@ -94,6 +94,17 @@ impl<S: tracing::Subscriber> Layer<S> for StubCounter {
 }
 
 fn main() -> anyhow::Result<()> {
+    // The app runs the emulator on a 16 MB thread (wipi_core::session); match it so a guest call
+    // chain that overflows there overflows here too, and one that fits there fits here.
+    std::thread::Builder::new()
+        .name("headless".into())
+        .stack_size(16 * 1024 * 1024)
+        .spawn(run)?
+        .join()
+        .map_err(|_| anyhow::anyhow!("headless thread panicked"))?
+}
+
+fn run() -> anyhow::Result<()> {
     let stub_counter = StubCounter::default();
     tracing_subscriber::registry()
         .with(
