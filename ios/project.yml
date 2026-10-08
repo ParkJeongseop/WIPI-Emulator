@@ -28,8 +28,8 @@ targets:
         TARGETED_DEVICE_FAMILY: 1
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.3.0"       # Android versionName과 통일
-        CURRENT_PROJECT_VERSION: "5"     # Android versionCode와 통일
+        MARKETING_VERSION: "0.3.1"       # Android versionName과 통일
+        CURRENT_PROJECT_VERSION: "6"     # Android versionCode와 통일
         # 실기기: 자동 서명 (Personal Team). 시뮬레이터는 서명 불필요.
         DEVELOPMENT_TEAM: 7WYMPDQCGP
         CODE_SIGN_STYLE: Automatic
@@ -38,7 +38,7 @@ targets:
       path: WipiEmulator/Info.plist
       properties:
         CFBundleDisplayName: WIPI Emulator
-        CFBundleShortVersionString: "0.3.0"   # Android versionName과 통일
+        CFBundleShortVersionString: "0.3.1"   # Android versionName과 통일
         CFBundleVersion: "5"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
