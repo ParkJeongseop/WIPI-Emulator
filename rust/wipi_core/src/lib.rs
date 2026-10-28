@@ -58,6 +58,28 @@ pub fn extract_metadata(buf: &[u8]) -> GameMetadata {
 /// 묶은 배포본) 그 접두사를 벗겨 루트에 놓는다. 어느 플랫폼도 알아보지 못하는 경우에만, 플랫폼 표식 파일
 /// (KTF `__adf__`, LGT `app_info`, SKT `.msd`, ez-java `.jad`)이 있는 디렉터리를 찾아 그 아래 파일만 남긴다.
 pub fn normalize_archive(files: BTreeMap<String, Vec<u8>>) -> BTreeMap<String, Vec<u8>> {
+    strip_handset_files(normalize_layout(files))
+}
+
+/// `(KTF pid, 경로)`: 아카이브를 뜬 단말에서 딸려온, 게임의 일부가 아닌 파일. 새로 설치한 단말에는 없었고 다른
+/// 단말에서는 쓸 수도 없는 것들이라 올리지 않는다. 라이브러리 `manifest.tsv`의 `strip` 열과 같은 목록.
+///
+/// 티어즈오브메탈(PD004584) `P/res/save.sav`·`savem.sav`: 단말 메모리의 세이브 구조체 덤프라 힙 포인터가 그대로
+/// 들어 있고, 타이틀이 192바이트를 구조체로 읽은 뒤 그 안의 포인터를 따라가 그 단말 밖에서는 어디서든 fault.
+const HANDSET_FILES: &[(&str, &str)] = &[("PD004584", "P/res/save.sav"), ("PD004584", "P/res/savem.sav")];
+
+fn strip_handset_files(mut files: BTreeMap<String, Vec<u8>>) -> BTreeMap<String, Vec<u8>> {
+    if let Some(pid) = KtfEmulator::archive_id(&files) {
+        for (_, path) in HANDSET_FILES.iter().filter(|(p, _)| *p == pid) {
+            if files.remove(*path).is_some() {
+                tracing::info!("dropping {path}: carried over from the archive's handset");
+            }
+        }
+    }
+    files
+}
+
+fn normalize_layout(files: BTreeMap<String, Vec<u8>>) -> BTreeMap<String, Vec<u8>> {
     let recognised = KtfEmulator::loadable_archive(&files)
         || LgtEmulator::loadable_archive(&files)
         || SktEmulator::loadable_archive(&files)
@@ -96,6 +118,23 @@ fn adf_field(adf: &[u8], key: &[u8]) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn normalize_archive_drops_files_carried_over_from_the_handset() {
+        let files: BTreeMap<String, Vec<u8>> = [
+            ("__adf__", b"PID:PD004584\nAID:0103451A\n".to_vec()),
+            ("0103451A.jar", b"j".to_vec()),
+            ("P/res/save.sav", b"s".to_vec()),
+            ("P/res/data.bin", b"d".to_vec()),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_owned(), v))
+        .collect();
+
+        let files = normalize_archive(files);
+        assert!(!files.contains_key("P/res/save.sav"));
+        assert!(files.contains_key("P/res/data.bin"));
+    }
 
     #[test]
     fn normalize_archive_strips_the_directory_holding_the_marker() {
