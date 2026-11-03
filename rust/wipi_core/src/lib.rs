@@ -66,7 +66,13 @@ pub fn normalize_archive(files: BTreeMap<String, Vec<u8>>) -> BTreeMap<String, V
 ///
 /// 티어즈오브메탈(PD004584) `P/res/save.sav`·`savem.sav`: 단말 메모리의 세이브 구조체 덤프라 힙 포인터가 그대로
 /// 들어 있고, 타이틀이 192바이트를 구조체로 읽은 뒤 그 안의 포인터를 따라가 그 단말 밖에서는 어디서든 fault.
-const HANDSET_FILES: &[(&str, &str)] = &[("PD004584", "P/res/save.sav"), ("PD004584", "P/res/savem.sav")];
+///
+/// 삼국쟁패2(PD005126) `P/sj2_save.bin`: 뜬 사람의 전화번호로 묶인 암호화 세이브. 읽자마자 타이틀이 종료한다.
+const HANDSET_FILES: &[(&str, &str)] = &[
+    ("PD004584", "P/res/save.sav"),
+    ("PD004584", "P/res/savem.sav"),
+    ("PD005126", "P/sj2_save.bin"),
+];
 
 fn strip_handset_files(mut files: BTreeMap<String, Vec<u8>>) -> BTreeMap<String, Vec<u8>> {
     if let Some(pid) = KtfEmulator::archive_id(&files) {
