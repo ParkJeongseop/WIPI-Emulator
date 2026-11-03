@@ -174,6 +174,12 @@ fn run() -> anyhow::Result<()> {
             last_frame = Some(frame);
         }
 
+        // 앱은 종료 요청(MC_knlExit 등)에서 게임을 닫는다. 계속 돌리면 종료 뒤의 가짜 화면을 찍는다.
+        if platform.take_exit_requested() {
+            eprintln!("EXIT t={}ms ticks={ticks}: the title asked to exit", elapsed_ms());
+            break;
+        }
+
         // 1초마다 현재 프레임 저장 → 진행 과정 관찰용
         let elapsed = elapsed_ms() / 1000;
         if elapsed > saved_seconds {
