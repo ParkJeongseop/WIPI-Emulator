@@ -218,6 +218,14 @@ pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8]) 
             // ez-java(JAD+JAR): 디스크립터가 정한 LCD 크기로 돌리고 고정 프레임에 맞춰 보여준다.
             let platform = Box::new(platform::LcdPlatform::new(platform));
             Ok(Box::new(J2MEEmulator::from_archive(platform, files)?))
+        } else if let [(_, jar)] = files.iter().filter(|(name, _)| name.to_ascii_lowercase().ends_with(".jar")).collect::<Vec<_>>().as_slice()
+            && files.len() == 1
+        {
+            // A JAR zipped on its own, often under a name the archiver mangled: it is the game, named
+            // after the archive.
+            let stem = &filename[filename.rfind(['/', '\\']).map(|x| x + 1).unwrap_or(0)..];
+            let jar_name = format!("{}.jar", stem.trim_end_matches(".zip"));
+            create_emulator(platform, &jar_name, jar)
         } else {
             anyhow::bail!("Unknown archive format")
         }
