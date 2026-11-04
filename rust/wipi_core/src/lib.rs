@@ -198,8 +198,10 @@ mod tests {
 /// Creates the right emulator for the given file, mirroring the
 /// format-detection branch in wie_cli / wie_web.
 pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8]) -> anyhow::Result<Box<dyn Emulator>> {
+    // No AOT executor: iOS forbids generating code at run time, so both platforms interpret.
     let options = Options {
         enable_gdbserver: false,
+        aot: None,
         profile: None,
     };
 

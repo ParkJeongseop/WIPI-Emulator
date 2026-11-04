@@ -40,12 +40,42 @@ impl FsFilesystem {
             return None;
         }
 
-        Some(self.base_path.join(&sanitized_aid).join(normalized))
+        Some(super::storage::namespace_dir(&self.base_path, &sanitized_aid).join(normalized))
     }
 }
 
 #[async_trait::async_trait]
 impl Filesystem for FsFilesystem {
+    async fn remove(&self, aid: &str, path: &str) -> bool {
+        let Some(disk_path) = self.path_for(aid, path) else {
+            return false;
+        };
+
+        fs::remove_file(&disk_path).is_ok()
+    }
+
+    async fn usage(&self, aid: &str) -> u64 {
+        fn directory_usage(path: &Path) -> u64 {
+            let Ok(entries) = fs::read_dir(path) else {
+                return 0;
+            };
+            entries
+                .filter_map(Result::ok)
+                .map(|entry| match entry.file_type() {
+                    Ok(file_type) if file_type.is_file() => entry.metadata().map(|metadata| metadata.len()).unwrap_or(0),
+                    Ok(file_type) if file_type.is_dir() => directory_usage(&entry.path()),
+                    _ => 0,
+                })
+                .sum()
+        }
+
+        let sanitized_aid: String = aid.chars().filter(|c| !matches!(c, '/' | '\\' | '\0')).collect();
+        if sanitized_aid.is_empty() || sanitized_aid == "." || sanitized_aid == ".." {
+            return 0;
+        }
+        directory_usage(&super::storage::namespace_dir(&self.base_path, &sanitized_aid))
+    }
+
     async fn exists(&self, aid: &str, path: &str) -> bool {
         let Some(disk_path) = self.path_for(aid, path) else {
             return false;

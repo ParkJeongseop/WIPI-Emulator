@@ -33,7 +33,7 @@ impl FsDatabaseRepository {
             normalized_name.push("_");
         }
 
-        self.base_path.join(app_id).join(normalized_name)
+        super::storage::namespace_dir(&self.base_path, app_id).join(normalized_name)
     }
 }
 
@@ -49,7 +49,7 @@ impl wie_backend::DatabaseRepository for FsDatabaseRepository {
         self.get_path_for_database(name, app_id).exists()
     }
 
-    async fn usage(&self, app_id: &str) -> u64 {
+    fn usage(&self, app_id: &str) -> u64 {
         fn directory_usage(path: &std::path::Path) -> u64 {
             let Ok(entries) = fs::read_dir(path) else {
                 return 0;
@@ -71,7 +71,7 @@ impl wie_backend::DatabaseRepository for FsDatabaseRepository {
                 .sum()
         }
 
-        directory_usage(&self.base_path.join(app_id))
+        directory_usage(&super::storage::namespace_dir(&self.base_path, app_id))
     }
 
     async fn delete(&self, name: &str, app_id: &str) -> bool {

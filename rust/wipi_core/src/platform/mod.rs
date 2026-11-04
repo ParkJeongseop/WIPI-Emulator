@@ -3,6 +3,7 @@ mod database;
 mod filesystem;
 mod lcd;
 mod screen;
+mod storage;
 
 use std::{
     path::PathBuf,
