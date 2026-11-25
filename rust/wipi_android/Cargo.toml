@@ -5,7 +5,9 @@ edition = "2024"
 license = "MIT"
 
 [lib]
-crate-type = ["cdylib", "lib"]
+# cdylib만: rlib("lib")을 같이 내면 cargo가 이 크레이트의 LTO를 조용히 끈다 (프로필의 lto = true가 무시됨).
+# headless 바이너리는 wipi_core를 직접 쓴다.
+crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1"

@@ -55,6 +55,11 @@ void wipi_set_paused(bool paused);
 // loudness vary per game, so users need balance control.
 void wipi_set_volume(float pcm_volume, float midi_volume);
 
+// Share of the last second the emulator thread spent running the game,
+// 0..100. Near 100 the device limits the frame rate; well below it the game
+// is pacing itself.
+uint32_t wipi_cpu_load(void);
+
 // Polls whether the game requested to exit. If true, the host should call
 // wipi_stop and return to its menu/library UI.
 bool wipi_poll_exit(void);

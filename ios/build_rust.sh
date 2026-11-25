@@ -14,7 +14,7 @@ esac
 
 cd "$SRCROOT/../rust"
 
-# release-ios 프로필: LTO off (Xcode ld와 rustc LLVM 버전 충돌 회피)
+# release-ios 프로필: fat LTO (rustc가 LTO를 끝낸 기계어 오브젝트만 아카이브에 담는다)
 cargo build --profile release-ios --target "$RUST_TARGET" -p wipi_ios
 
 echo "wipi_ios ($RUST_TARGET) 빌드 완료"

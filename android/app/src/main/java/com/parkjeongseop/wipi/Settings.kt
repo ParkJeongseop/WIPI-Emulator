@@ -70,6 +70,10 @@ class Settings(context: Context) {
         get() = prefs.getBoolean("keypadHaptics", true)
         set(value) = prefs.edit { putBoolean("keypadHaptics", value) }
 
+    var showPerformance: Boolean
+        get() = prefs.getBoolean("showPerformance", false)
+        set(value) = prefs.edit { putBoolean("showPerformance", value) }
+
     /** 현재 설정 기준 유효 볼륨 (pcm, midi — 사운드 off면 0) */
     fun effectiveVolumes(): Pair<Float, Float> =
         if (soundEnabled) pcmVolume to midiVolume else 0f to 0f
@@ -143,6 +147,7 @@ private fun SettingsPage(settings: Settings, onVolumeChanged: () -> Unit, onShow
     var vibrationEnabled by remember { mutableStateOf(settings.vibrationEnabled) }
     var vibrationScale by remember { mutableStateOf(settings.vibrationScale) }
     var keypadHaptics by remember { mutableStateOf(settings.keypadHaptics) }
+    var showPerformance by remember { mutableStateOf(settings.showPerformance) }
 
     SettingsScaffold(title = stringResource(R.string.settings_title), onBack = onBack) { modifier ->
         Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -230,6 +235,18 @@ private fun SettingsPage(settings: Settings, onVolumeChanged: () -> Unit, onShow
                     Switch(checked = keypadHaptics, onCheckedChange = {
                         keypadHaptics = it
                         settings.keypadHaptics = it
+                    })
+                },
+            )
+
+            CategoryHeader(stringResource(R.string.settings_performance_header))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_show_performance)) },
+                supportingContent = { Text(stringResource(R.string.settings_show_performance_footer)) },
+                trailingContent = {
+                    Switch(checked = showPerformance, onCheckedChange = {
+                        showPerformance = it
+                        settings.showPerformance = it
                     })
                 },
             )

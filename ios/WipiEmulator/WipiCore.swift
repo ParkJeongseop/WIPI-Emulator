@@ -55,6 +55,11 @@ enum WipiCore {
         return (duration, intensity)
     }
 
+    /// 직전 1초 동안 에뮬레이터 스레드가 게임을 실행한 비율(0~100). 100에 가까우면 기기 성능이 한계
+    static func cpuLoad() -> Int {
+        Int(wipi_cpu_load())
+    }
+
     /// 게임이 종료를 요청했는지 (true면 세션 정리 후 라이브러리 복귀)
     static func pendingExit() -> Bool {
         wipi_poll_exit()

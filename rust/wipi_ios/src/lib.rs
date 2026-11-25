@@ -177,6 +177,13 @@ pub extern "C" fn wipi_set_volume(pcm_volume: f32, midi_volume: f32) {
     session::set_volume(pcm_volume, midi_volume);
 }
 
+/// Share of the last second the emulator thread spent running the game, 0..100. Near 100 the
+/// device is the limit on the frame rate; well below it the game is pacing itself.
+#[unsafe(no_mangle)]
+pub extern "C" fn wipi_cpu_load() -> u32 {
+    session::cpu_load()
+}
+
 /// 게임이 종료를 요청했는지 폴링한다. true면 호스트가 wipi_stop 후 UI를 되돌려야 한다.
 #[unsafe(no_mangle)]
 pub extern "C" fn wipi_poll_exit() -> bool {

@@ -21,7 +21,7 @@
 wie-mobile/
 ├─ rust/                    # Rust 워크스페이스
 │  ├─ Cargo.toml            # wie 크레이트를 path 의존성으로 (../wie — 로컬 클론 필요!)
-│  │                        #   [profile.release-ios] = LTO off (Xcode ld와 LLVM 버전 충돌 회피)
+│  │                        #   [profile.release-ios] = release 상속 (fat LTO)
 │  ├─ Cargo.lock            # ★ wie/Cargo.lock 복사본 — RustJava 등 git rev 고정용. 재생성 금지
 │  ├─ .cargo/config.toml    # Android NDK 링커 설정 (android26-clang — AAudio 때문에 26 필수, Windows 경로)
 │  ├─ wipi_core/      # ★ 공통 코어 (Android/iOS 공유)
@@ -70,7 +70,7 @@ adb shell input tap <표지좌표>   # 라이브러리에서 게임 탭
 ## iOS 빌드 (Mac)
 
 ```sh
-# Rust (rust/ 에서) — release-ios 프로필 필수 (LTO off)
+# Rust (rust/ 에서) — release-ios 프로필
 cargo build --profile release-ios --target aarch64-apple-ios-sim -p wipi_ios   # 시뮬레이터
 cargo build --profile release-ios --target aarch64-apple-ios -p wipi_ios      # 실기기
 
@@ -170,8 +170,9 @@ xcrun simctl launch --console-pty "iPhone 17" com.parkjeongseop.wipi   # --conso
   WIPI C API 활발히 호출(MC_mdaClipSetVolume 등), 50초+ error/panic 0건. 시뮬레이터에선 helloworld_ktf/lgt 검증.
 
 iOS 함정 모음:
-- **release-ios 프로필(LTO off) 필수**: lto=true 산출물은 rustc LLVM과 Xcode ld의 버전 차이로
-  비트코드 호환 문제 위험 (Apple nm도 오브젝트를 못 읽음). 링크는 -lwipi_ios + AudioToolbox/CoreAudio/CoreHaptics.
+- **LTO는 crate-type에 달려 있다**: wipi_ios는 `["staticlib"]`, wipi_android는 `["cdylib"]`만 둔다. `"lib"`(rlib)을 같이 내면
+  cargo가 그 크레이트의 LTO를 경고 없이 끈다 — 0.3.2까지 두 플랫폼 모두 그 상태였고 타이틀 CPU 비용이 약 1.5배였다.
+  staticlib LTO 산출물은 기계어 오브젝트뿐이라 Xcode ld의 LLVM 버전과 무관. 링크는 -lwipi_ios + AudioToolbox/CoreAudio/CoreHaptics.
 - 예상대로 cpal(CoreAudio)은 iOS에서 초기화 없이 그대로 동작 (ndk-context 불필요).
 - 시뮬레이터 로그는 `simctl launch --console-pty`, 실기기는 `devicectl device process launch --console`로 stderr 확인.
 - **C ABI에 심볼 추가 시**: 디바이스+시뮬레이터 .a 둘 다 재빌드해야 링크 심볼이 일치 (안 하면 한쪽 빌드 깨짐).

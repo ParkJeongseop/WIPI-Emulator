@@ -136,6 +136,12 @@ pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeSetVolume(_e
     session::set_volume(pcm, midi);
 }
 
+/// Share of the last second the emulator thread spent running the game, 0..100.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeCpuLoad(_env: JNIEnv, _class: JClass) -> jni::sys::jint {
+    session::cpu_load() as _
+}
+
 /// 게임이 종료를 요청했는지 폴링. true면 호스트가 nativeStop 후 라이브러리로 복귀.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativePollExit(_env: JNIEnv, _class: JClass) -> jboolean {

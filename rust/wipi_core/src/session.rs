@@ -9,11 +9,11 @@ use std::{
     path::PathBuf,
     sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU32, Ordering},
         mpsc::{Receiver, Sender, channel},
     },
     thread::JoinHandle,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use wie_backend::{Event, KeyCode};
@@ -40,10 +40,20 @@ pub struct SessionError {
     pub message: String,
 }
 
+/// A tick shorter than this ran no guest code: every task was asleep or waiting.
+const IDLE_TICK: Duration = Duration::from_micros(20);
+/// How long the emulator thread sleeps after an idle tick. A title's timers and `Thread.sleep`
+/// wake up to this much late, which is far below a frame; spinning instead keeps a core at 100%
+/// for a title that needs a tenth of it, and a phone answers that with heat and a throttled CPU.
+const IDLE_SLEEP: Duration = Duration::from_micros(500);
+
 struct Session {
     key_tx: Sender<KeyEvent>,
     stop: Arc<AtomicBool>,
     paused: Arc<AtomicBool>,
+    /// Share of the last second the emulator thread spent running the title, in percent. At 100
+    /// the title is asking for more than the interpreter delivers and its frame rate is ours.
+    load: Arc<AtomicU32>,
     platform: Arc<MobilePlatform>,
     error: Arc<Mutex<Option<SessionError>>>,
     thread: Option<JoinHandle<()>>,
@@ -86,8 +96,11 @@ fn emulator_thread(
     key_rx: Receiver<KeyEvent>,
     stop: Arc<AtomicBool>,
     paused: Arc<AtomicBool>,
+    load: Arc<AtomicU32>,
     error: Arc<Mutex<Option<SessionError>>>,
 ) {
+    raise_thread_priority();
+
     let mut emulator = match crate::create_emulator(Box::new(SharedPlatform(platform.clone())), &filename, &game_data) {
         Ok(x) => x,
         Err(e) => {
@@ -100,14 +113,21 @@ fn emulator_thread(
     };
 
     let mut pressed: HashMap<KeyCode, Instant> = HashMap::new();
+    let mut load_window = Instant::now();
+    let mut busy = Duration::ZERO;
 
     while !stop.load(Ordering::SeqCst) {
         // 일시정지: tick을 멈춰 게임 세계를 얼린다 (RetroArch 등 에뮬 표준의 auto-pause).
         // 키 이벤트는 채널에 남아 재개 후 처리된다.
         if paused.load(Ordering::SeqCst) {
             std::thread::sleep(std::time::Duration::from_millis(50));
+            load.store(0, Ordering::Relaxed);
+            load_window = Instant::now();
+            busy = Duration::ZERO;
             continue;
         }
+
+        let tick_start = Instant::now();
 
         // 코어의 panic(에뮬레이션 버그)이 스레드를 조용히 죽이면 앱은 "프리즈"로만
         // 보인다 — catch_unwind로 Runtime 에러로 승격해 호스트가 표시하게 한다.
@@ -144,6 +164,19 @@ fn emulator_thread(
             emulator.tick()
         }));
 
+        let tick_time = tick_start.elapsed();
+        if tick_time < IDLE_TICK {
+            std::thread::sleep(IDLE_SLEEP);
+        } else {
+            busy += tick_time;
+        }
+        let window = load_window.elapsed();
+        if window >= Duration::from_secs(1) {
+            load.store((busy.as_micros() * 100 / window.as_micros().max(1)).min(100) as u32, Ordering::Relaxed);
+            load_window = Instant::now();
+            busy = Duration::ZERO;
+        }
+
         match step {
             Ok(Ok(())) => {}
             Ok(Err(e)) => {
@@ -170,6 +203,35 @@ fn emulator_thread(
     }
 }
 
+/// Asks the scheduler to treat the emulator thread as the one the user is looking at. Without it
+/// iOS is free to run the thread on an efficiency core, several times slower than a performance
+/// core, and the interpreter has no headroom to give away.
+fn raise_thread_priority() {
+    #[cfg(target_vendor = "apple")]
+    {
+        const QOS_CLASS_USER_INTERACTIVE: u32 = 0x21;
+        unsafe extern "C" {
+            fn pthread_set_qos_class_self_np(qos_class: u32, relative_priority: i32) -> i32;
+        }
+        let result = unsafe { pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0) };
+        if result != 0 {
+            tracing::warn!("pthread_set_qos_class_self_np failed: {result}");
+        }
+    }
+    #[cfg(target_os = "android")]
+    {
+        // The nice value Android gives its own display threads (THREAD_PRIORITY_DISPLAY). On Linux
+        // `who` 0 with PRIO_PROCESS is the calling thread.
+        const PRIO_PROCESS: i32 = 0;
+        unsafe extern "C" {
+            fn setpriority(which: i32, who: u32, priority: i32) -> i32;
+        }
+        if unsafe { setpriority(PRIO_PROCESS, 0, -4) } != 0 {
+            tracing::warn!("setpriority failed");
+        }
+    }
+}
+
 /// 게임을 로드하고 에뮬레이터 스레드를 시작한다.
 /// 단일 세션 앱이므로 이전 세션이 남아 있으면(호스트 정리 누락 등) 오류 대신 정리하고 시작한다.
 pub fn start(filename: String, game_data: Vec<u8>, data_dir: PathBuf, soundfont_path: Option<PathBuf>) -> anyhow::Result<()> {
@@ -186,20 +248,22 @@ pub fn start(filename: String, game_data: Vec<u8>, data_dir: PathBuf, soundfont_
     let (key_tx, key_rx) = channel();
     let stop = Arc::new(AtomicBool::new(false));
     let paused = Arc::new(AtomicBool::new(false));
+    let load = Arc::new(AtomicU32::new(0));
     let error = Arc::new(Mutex::new(None));
 
     let thread = {
-        let (platform, stop, paused, error) = (platform.clone(), stop.clone(), paused.clone(), error.clone());
+        let (platform, stop, paused, load, error) = (platform.clone(), stop.clone(), paused.clone(), load.clone(), error.clone());
         std::thread::Builder::new()
             .name("wie-emulator".into())
             .stack_size(16 * 1024 * 1024)
-            .spawn(move || emulator_thread(platform, filename, game_data, key_rx, stop, paused, error))?
+            .spawn(move || emulator_thread(platform, filename, game_data, key_rx, stop, paused, load, error))?
     };
 
     *session = Some(Session {
         key_tx,
         stop,
         paused,
+        load,
         platform,
         error,
         thread: Some(thread),
@@ -228,6 +292,19 @@ pub fn set_volume(pcm: f32, midi: f32) {
 pub fn take_frame() -> Option<CapturedFrame> {
     let session = SESSION.lock().unwrap();
     session.as_ref()?.platform.screen_capture().take_frame()
+}
+
+/// Frames the title has presented since the session started. The host shows the difference over
+/// a second as the frame rate.
+pub fn frame_count() -> u64 {
+    let session = SESSION.lock().unwrap();
+    session.as_ref().map_or(0, |s| s.platform.screen_capture().frame_count())
+}
+
+/// Share of the last second the emulator thread spent running the title, in percent.
+pub fn cpu_load() -> u32 {
+    let session = SESSION.lock().unwrap();
+    session.as_ref().map_or(0, |s| s.load.load(Ordering::Relaxed))
 }
 
 /// 게임이 요청한 보류 중인 진동을 가져온다 (호스트가 실제 진동 하드웨어로 전달).

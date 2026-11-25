@@ -11,6 +11,7 @@ enum SettingsKey {
     static let soundEnabled = "soundEnabled"
     static let pcmVolume = "pcmVolume"
     static let midiVolume = "midiVolume"
+    static let showPerformance = "showPerformance"
 }
 
 struct SettingsView: View {
@@ -20,6 +21,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.soundEnabled) private var soundEnabled = true
     @AppStorage(SettingsKey.pcmVolume) private var pcmVolume = 1.0
     @AppStorage(SettingsKey.midiVolume) private var midiVolume = 1.0
+    @AppStorage(SettingsKey.showPerformance) private var showPerformance = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -63,6 +65,14 @@ struct SettingsView: View {
                     Text("settings_vibration_header")
                 } footer: {
                     Text("settings_vibration_footer")
+                }
+
+                Section {
+                    Toggle("settings_show_performance", isOn: $showPerformance)
+                } header: {
+                    Text("settings_performance_header")
+                } footer: {
+                    Text("settings_show_performance_footer")
                 }
 
                 Section {

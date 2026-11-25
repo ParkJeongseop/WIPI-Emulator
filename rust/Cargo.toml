@@ -21,10 +21,10 @@ wie_util = { package = "wie-util", git = "https://github.com/ParkJeongseop/wie.g
 lto = true
 opt-level = 3
 
-# Xcode ld는 rustc 자체 LLVM(fat LTO 산출물)과 버전이 어긋날 수 있어 iOS staticlib은 LTO 없이 빌드
+# iOS staticlib도 fat LTO: rustc가 LTO를 끝낸 기계어 오브젝트만 아카이브에 담으므로 Xcode ld의 LLVM 버전과 무관하다.
+# 인터프리터 루프(arm32_cpu ↔ wie-core-arm)가 크레이트 경계를 넘어 인라인되지 않으면 타이틀 CPU 비용이 약 1.5배가 된다.
 [profile.release-ios]
 inherits = "release"
-lto = "off"
 
 # RustJava는 wie와 동일하게 crates.io + 포크 패치(rev 고정)로 소비 — wie의 [patch]와 반드시 일치시킬 것.
 [patch.crates-io]

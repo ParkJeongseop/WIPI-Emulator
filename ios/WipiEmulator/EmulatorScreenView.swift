@@ -20,6 +20,12 @@ struct EmulatorScreenView: View {
     @AppStorage(SettingsKey.soundEnabled) private var soundEnabled = true
     @AppStorage(SettingsKey.pcmVolume) private var pcmVolume = 1.0
     @AppStorage(SettingsKey.midiVolume) private var midiVolume = 1.0
+    @AppStorage(SettingsKey.showPerformance) private var showPerformance = false
+
+    // 성능 표시: 화면에 새로 나간 프레임을 세어 1초마다 FPS로 표시
+    @State private var performanceText = ""
+    @State private var performanceSampledAt = Date()
+    @State private var presentedFrames = 0
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -54,6 +60,18 @@ struct EmulatorScreenView: View {
                         .foregroundStyle(.white.opacity(0.6))
                         .padding(10)
                 }
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            if showPerformance && !performanceText.isEmpty {
+                Text(performanceText)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Color.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 4))
+                    .padding(10)
+                    .allowsHitTesting(false)
             }
         }
         .overlay {
@@ -164,6 +182,10 @@ struct EmulatorScreenView: View {
     private func pollFrame() {
         if WipiCore.getFrame(into: &pixelBuffer) {
             frame = Self.makeImage(from: pixelBuffer)
+            presentedFrames += 1
+        }
+        if showPerformance {
+            samplePerformance()
         }
         // enabled가 아니어도 요청은 소비해야 큐가 쌓이지 않는다
         if let vibration = WipiCore.pendingVibration(), vibrationEnabled {
@@ -176,6 +198,17 @@ struct EmulatorScreenView: View {
         if WipiCore.pendingExit() {
             onExit()
         }
+    }
+
+    /// 1초마다 FPS(화면에 새로 나간 프레임 수)와 에뮬레이터 부하를 갱신
+    private func samplePerformance() {
+        let now = Date()
+        let elapsed = now.timeIntervalSince(performanceSampledAt)
+        guard elapsed >= 1 else { return }
+
+        performanceText = "\(Int((Double(presentedFrames) / elapsed).rounded())) FPS  CPU \(WipiCore.cpuLoad())%"
+        presentedFrames = 0
+        performanceSampledAt = now
     }
 
     /// RGBA8888 바이트 → CGImage (알파 무시)

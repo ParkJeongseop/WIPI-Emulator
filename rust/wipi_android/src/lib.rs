@@ -2,5 +2,3 @@
 
 #[cfg(target_os = "android")]
 mod jni_bridge;
-
-pub use wipi_core::{create_emulator, platform};

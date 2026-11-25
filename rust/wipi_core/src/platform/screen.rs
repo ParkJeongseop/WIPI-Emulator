@@ -1,6 +1,6 @@
 use std::sync::{
     Mutex,
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicU64, Ordering},
 };
 
 use wie_backend::{Screen, canvas::Image};
@@ -22,6 +22,8 @@ pub struct CaptureScreen {
     frame: Mutex<Option<CapturedFrame>>,
     dirty: AtomicBool,
     redraw_requested: AtomicBool,
+    /// Frames painted so far, for the host's frame rate display.
+    frame_count: AtomicU64,
 }
 
 impl CaptureScreen {
@@ -32,6 +34,7 @@ impl CaptureScreen {
             frame: Mutex::new(None),
             dirty: AtomicBool::new(false),
             redraw_requested: AtomicBool::new(false),
+            frame_count: AtomicU64::new(0),
         }
     }
 
@@ -41,6 +44,10 @@ impl CaptureScreen {
             return None;
         }
         self.frame.lock().unwrap().clone()
+    }
+
+    pub fn frame_count(&self) -> u64 {
+        self.frame_count.load(Ordering::Relaxed)
     }
 
     pub fn take_redraw_request(&self) -> bool {
@@ -69,6 +76,7 @@ impl Screen for CaptureScreen {
             pixels,
         });
         self.dirty.store(true, Ordering::SeqCst);
+        self.frame_count.fetch_add(1, Ordering::Relaxed);
     }
 
     fn width(&self) -> u32 {

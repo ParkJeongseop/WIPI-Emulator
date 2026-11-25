@@ -35,6 +35,9 @@
 "settings_vibration_footer" = "This multiplier is applied to the strength the game specifies (100% is the original).";
 "settings_keypad_haptics" = "Keypad haptics";
 "settings_keypad_haptics_desc" = "A subtle tap when pressing the on-screen keypad";
+"settings_performance_header" = "Performance";
+"settings_show_performance" = "Show frame rate";
+"settings_show_performance_footer" = "Shows how many new frames reach the screen each second and how busy the emulator is. CPU near 100% means the device is the limit.";
 "settings_info_header" = "About";
 "settings_licenses" = "Open-source licenses";
 "settings_version" = "Version";

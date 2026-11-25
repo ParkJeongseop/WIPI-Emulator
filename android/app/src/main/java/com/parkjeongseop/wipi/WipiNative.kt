@@ -43,6 +43,9 @@ object WipiNative {
     /** 볼륨 (0.0~1.0, 0이면 음소거) — PCM(효과음)/MIDI(배경음악) 분리, 호스트 사운드 설정 */
     external fun nativeSetVolume(pcm: Float, midi: Float)
 
+    /** 직전 1초 동안 에뮬레이터 스레드가 게임을 실행한 비율(0~100). 100에 가까우면 기기 성능이 한계 */
+    external fun nativeCpuLoad(): Int
+
     /** 게임이 종료를 요청했는지 폴링. true면 nativeStop 후 라이브러리로 복귀. */
     external fun nativePollExit(): Boolean
 

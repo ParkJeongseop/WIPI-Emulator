@@ -39,6 +39,9 @@
     <string name="settings_vibration_footer">게임이 지정한 세기에 이 배율이 곱해집니다. 100%가 원래 세기입니다.</string>
     <string name="settings_keypad_haptics">키패드 햅틱</string>
     <string name="settings_keypad_haptics_desc">화면 키패드를 누를 때 가벼운 반응</string>
+    <string name="settings_performance_header">성능</string>
+    <string name="settings_show_performance">프레임 표시</string>
+    <string name="settings_show_performance_footer">1초에 화면에 새로 나간 프레임 수와 에뮬레이터 부하를 표시합니다. CPU가 100%에 가까우면 기기 성능이 한계입니다.</string>
     <string name="settings_info_header">정보</string>
     <string name="settings_licenses">오픈소스 라이선스</string>
     <string name="settings_version">버전</string>

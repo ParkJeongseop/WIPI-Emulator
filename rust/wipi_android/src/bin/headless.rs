@@ -15,7 +15,7 @@ use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 use wie_backend::{Event, KeyCode};
 
-use wipi_android::platform::{CapturedFrame, MobilePlatform, SharedPlatform};
+use wipi_core::platform::{CapturedFrame, MobilePlatform, SharedPlatform};
 
 /// 진행성(T2/T3) 검증용 기본 키 시나리오 ("초:키" 목록, 키는 300ms 후 up)
 /// 타이틀 통과(OK×2) → 메뉴 이동(DOWN) → 선택(OK) → 게임 내 입력(5)
@@ -104,6 +104,51 @@ fn main() -> anyhow::Result<()> {
         .map_err(|_| anyhow::anyhow!("headless thread panicked"))?
 }
 
+/// Runs the title on the app's session loop and prints the frame rate and emulator load once a second.
+fn run_session(game_path: &str, data_dir: PathBuf, max_seconds: u64, key_spec: &str) -> anyhow::Result<()> {
+    use std::time::{Duration, Instant};
+
+    use wipi_core::session;
+
+    // (at, key name, down) — each key is released 300 ms after it is pressed
+    let mut keys: Vec<(Duration, &str, bool)> = Vec::new();
+    for entry in key_spec.split(',').filter(|x| !x.is_empty()) {
+        let Some((at, name)) = entry.split_once(':') else { continue };
+        let Ok(at) = at.trim().parse::<f64>() else { continue };
+        keys.push((Duration::from_secs_f64(at), name.trim(), true));
+        keys.push((Duration::from_secs_f64(at + 0.3), name.trim(), false));
+    }
+    keys.sort_by_key(|x| x.0);
+
+    session::start(game_path.to_owned(), fs::read(game_path)?, data_dir, None)?;
+
+    let start = Instant::now();
+    let mut next_key = 0;
+    let mut last_frames = 0;
+    for second in 1..=max_seconds {
+        while start.elapsed() < Duration::from_secs(second) {
+            while next_key < keys.len() && keys[next_key].0 <= start.elapsed() {
+                let (_, name, down) = keys[next_key];
+                if down { session::key_down(name) } else { session::key_up(name) }
+                next_key += 1;
+            }
+            session::take_frame();
+            std::thread::sleep(Duration::from_millis(16));
+        }
+        let frames = session::frame_count();
+        eprintln!("t={second}s fps={} load={}%", frames - last_frames, session::cpu_load());
+        last_frames = frames;
+        if let Some(error) = session::take_error() {
+            eprintln!("session error: {}", error.message);
+            break;
+        }
+    }
+    eprintln!("frames={last_frames}");
+    session::stop();
+
+    Ok(())
+}
+
 fn run() -> anyhow::Result<()> {
     let stub_counter = StubCounter::default();
     tracing_subscriber::registry()
@@ -125,6 +170,11 @@ fn run() -> anyhow::Result<()> {
 
     let out_path_buf = PathBuf::from(out_path);
     let data_dir = out_path_buf.parent().unwrap_or(std::path::Path::new(".")).join("wie_data");
+
+    // WIE_SESSION=1: 앱과 같은 세션 루프(wipi_core::session)로 실행해 페이싱과 부하를 잰다.
+    if std::env::var("WIE_SESSION").is_ok_and(|v| v != "0" && !v.is_empty()) {
+        return run_session(game_path, data_dir, max_seconds, if key_spec == "none" { "" } else { key_spec });
+    }
     let platform = Arc::new(MobilePlatform::new(data_dir, 240, 320, None));
 
     // WIE_VCLOCK=1: 가상 시계(호출마다 1ms 전진) — 실행 간 결정성 확보 (flaky 조사용).
@@ -137,7 +187,7 @@ fn run() -> anyhow::Result<()> {
     }
 
     let buf = fs::read(game_path)?;
-    let mut emulator = wipi_android::create_emulator(Box::new(SharedPlatform(platform.clone())), game_path, &buf)?;
+    let mut emulator = wipi_core::create_emulator(Box::new(SharedPlatform(platform.clone())), game_path, &buf)?;
 
     let start = std::time::Instant::now();
     let elapsed_ms = {
@@ -153,6 +203,8 @@ fn run() -> anyhow::Result<()> {
     let mut last_frame: Option<CapturedFrame> = None;
     let mut saved_seconds = 0u64;
     let mut ticks = 0u64;
+    let mut frames_this_second = 0u64; // frames presented since the last per-second line (the app's fps)
+    let mut busy_this_second = std::time::Duration::ZERO; // wall time inside ticks that ran guest code (idle ticks return at once)
     let mut next_key = 0usize; // KEY_SCRIPT 진행 인덱스
     while elapsed_ms() / 1000 < max_seconds {
         if platform.screen_capture().take_redraw_request() {
@@ -167,11 +219,17 @@ fn run() -> anyhow::Result<()> {
             next_key += 1;
         }
 
+        let tick_start = std::time::Instant::now();
         emulator.tick()?;
+        let tick_time = tick_start.elapsed();
+        if tick_time.as_micros() >= 20 {
+            busy_this_second += tick_time;
+        }
         ticks += 1;
 
         if let Some(frame) = platform.screen_capture().take_frame() {
             last_frame = Some(frame);
+            frames_this_second += 1;
         }
 
         // 앱은 종료 요청(MC_knlExit 등)에서 게임을 닫는다. 계속 돌리면 종료 뒤의 가짜 화면을 찍는다.
@@ -187,10 +245,12 @@ fn run() -> anyhow::Result<()> {
             if let Some(frame) = &last_frame {
                 let non_black = frame.pixels.chunks(4).filter(|p| p[0] != 0 || p[1] != 0 || p[2] != 0).count();
                 write_bmp(&format!("{out_path}_{saved_seconds:03}.bmp"), frame)?;
-                eprintln!("t={saved_seconds}s ticks={ticks} non_black_pixels={non_black}");
+                eprintln!("t={saved_seconds}s ticks={ticks} fps={frames_this_second} busy={}% non_black_pixels={non_black}", busy_this_second.as_millis() / 10);
             } else {
                 eprintln!("t={saved_seconds}s ticks={ticks} (no frame painted yet)");
             }
+            frames_this_second = 0;
+            busy_this_second = std::time::Duration::ZERO;
         }
     }
 

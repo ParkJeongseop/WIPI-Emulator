@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -65,6 +66,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -72,6 +74,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.io.File
+import kotlin.math.roundToInt
 
 const val SCREEN_WIDTH = 240
 const val SCREEN_HEIGHT = 320
@@ -300,6 +303,8 @@ class MainActivity : ComponentActivity() {
         val vibrateOut = remember { LongArray(2) }
         var frame by remember { mutableStateOf<ImageBitmap?>(null) }
         var paused by remember { mutableStateOf(false) }
+        // 성능 표시: 화면에 새로 나간 프레임을 세어 1초마다 FPS로 표시 (설정이 꺼져 있으면 null)
+        var performanceText by remember { mutableStateOf<String?>(null) }
 
         // 시스템 뒤로가기: 실수 종료 방지를 위해 먼저 일시정지 메뉴, 일시정지 중 다시 누르면 종료 (에뮬 표준 패턴)
         BackHandler {
@@ -332,10 +337,24 @@ class MainActivity : ComponentActivity() {
         }
 
         LaunchedEffect(Unit) {
+            var sampledAt = System.nanoTime()
+            var presentedFrames = 0
             while (isActive) {
                 if (WipiNative.nativeGetFrame(pixels)) {
                     bitmap.setPixels(pixels, 0, SCREEN_WIDTH, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
                     frame = bitmap.asImageBitmap().also { it.prepareToDraw() }
+                    presentedFrames++
+                }
+                if (settings.showPerformance) {
+                    val now = System.nanoTime()
+                    if (now - sampledAt >= 1_000_000_000L) {
+                        val fps = presentedFrames * 1_000_000_000.0 / (now - sampledAt)
+                        performanceText = "${fps.roundToInt()} FPS  CPU ${WipiNative.nativeCpuLoad()}%"
+                        sampledAt = now
+                        presentedFrames = 0
+                    }
+                } else if (performanceText != null) {
+                    performanceText = null
                 }
                 // enabled가 아니어도 요청은 소비해야 큐가 쌓이지 않는다
                 if (WipiNative.nativePollVibrate(vibrateOut) && settings.vibrationEnabled) {
@@ -353,8 +372,10 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().background(Color(0xFF202020))) {
+        // targetSdk 35+는 edge-to-edge가 강제라, 시스템 바 영역을 비워 두지 않으면 게임 화면 윗줄이
+        // 상태바 밑으로, 키패드 아랫줄이 제스처 바 밑으로 들어간다.
+        Box(modifier = Modifier.fillMaxSize().background(Color(0xFF202020)).systemBarsPadding()) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 // 화면 영역 — ContentScale.Fit이 영역 안에서 레터박스 (키패드 침범 없음)
                 Box(
                     modifier = Modifier.fillMaxWidth().weight(1f),
@@ -372,6 +393,21 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Keypad(hapticsEnabled = settings.keypadHaptics, modifier = Modifier.fillMaxWidth().padding(8.dp))
+            }
+
+            // 좌상단: 성능 표시 (설정에서 켠 경우)
+            performanceText?.let {
+                Text(
+                    it,
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(10.dp)
+                        .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                )
             }
 
             // 우상단: 일시정지 + 설정 (iOS와 동일 구성)

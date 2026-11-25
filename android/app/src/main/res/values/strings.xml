@@ -39,6 +39,9 @@
     <string name="settings_vibration_footer">This multiplier is applied to the strength the game specifies (100% is the original).</string>
     <string name="settings_keypad_haptics">Keypad haptics</string>
     <string name="settings_keypad_haptics_desc">A subtle tap when pressing the on-screen keypad</string>
+    <string name="settings_performance_header">Performance</string>
+    <string name="settings_show_performance">Show frame rate</string>
+    <string name="settings_show_performance_footer">Shows how many new frames reach the screen each second and how busy the emulator is. CPU near 100% means the device is the limit.</string>
     <string name="settings_info_header">About</string>
     <string name="settings_licenses">Open-source licenses</string>
     <string name="settings_version">Version</string>
