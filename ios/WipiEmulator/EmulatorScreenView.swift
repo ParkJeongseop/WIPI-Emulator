@@ -8,6 +8,16 @@ struct EmulatorScreenView: View {
     let onError: (String) -> Void
     let onExit: () -> Void
 
+    /// 치트 상태 — 게임 한 판 동안 유지 (저장된 치트는 게임 id별로 보관)
+    @StateObject private var cheats: CheatModel
+    @State private var showCheats = false
+
+    init(gameId: String, onError: @escaping (String) -> Void, onExit: @escaping () -> Void) {
+        self.onError = onError
+        self.onExit = onExit
+        _cheats = StateObject(wrappedValue: CheatModel(gameId: gameId))
+    }
+
     @State private var frame: CGImage?
     @State private var pixelBuffer = [UInt8](repeating: 0, count: WipiCore.frameByteCount)
     @State private var haptics = Haptics()
@@ -21,6 +31,7 @@ struct EmulatorScreenView: View {
     @AppStorage(SettingsKey.pcmVolume) private var pcmVolume = 1.0
     @AppStorage(SettingsKey.midiVolume) private var midiVolume = 1.0
     @AppStorage(SettingsKey.showPerformance) private var showPerformance = false
+    @AppStorage(SettingsKey.gameSpeed) private var gameSpeed = 100
 
     // 성능 표시: 화면에 새로 나간 프레임을 세어 1초마다 FPS로 표시
     @State private var performanceText = ""
@@ -85,12 +96,17 @@ struct EmulatorScreenView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+        .sheet(isPresented: $showCheats) {
+            CheatView(model: cheats)
+        }
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true // 게임 중 화면 자동잠금 방지
             AudioSession.activate()
             applyVolume()
+            WipiCore.setSpeed(percent: gameSpeed)
             controllerInput.start()
         }
+        .onChange(of: gameSpeed) { WipiCore.setSpeed(percent: $0) }
         .onChange(of: soundEnabled) { _ in applyVolume() }
         .onChange(of: pcmVolume) { _ in applyVolume() }
         .onChange(of: midiVolume) { _ in applyVolume() }
@@ -128,13 +144,23 @@ struct EmulatorScreenView: View {
                     .font(.subheadline)
                     .opacity(0.7)
 
-                Button {
-                    onExit()
-                } label: {
-                    Label("emulator_exit", systemImage: "rectangle.portrait.and.arrow.right")
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.15), in: Capsule())
+                HStack(spacing: 12) {
+                    Button {
+                        showCheats = true
+                    } label: {
+                        Label("cheat_title", systemImage: "wand.and.stars")
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(Color.white.opacity(0.15), in: Capsule())
+                    }
+                    Button {
+                        onExit()
+                    } label: {
+                        Label("emulator_exit", systemImage: "rectangle.portrait.and.arrow.right")
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(Color.white.opacity(0.15), in: Capsule())
+                    }
                 }
                 .padding(.top, 24)
             }

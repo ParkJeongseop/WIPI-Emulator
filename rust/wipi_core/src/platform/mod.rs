@@ -42,6 +42,34 @@ pub struct MobilePlatform {
     /// 가상 시계 (epoch ms). 0이면 비활성(실시간). now() 호출마다 1ms 전진하는
     /// 결정적 시계 — flaky(타이밍 레이스) 재현/차단 실험용 (headless 전용).
     virtual_clock_ms: AtomicU64,
+    /// 게임 속도 배율이 적용된 시계
+    game_clock: Mutex<GameClock>,
+}
+
+/// 게임이 보는 시계. 기준점(anchor) 이후 흐른 실제 시간에 속도 배율을 곱해 더한다 —
+/// 속도를 바꿀 때 기준점을 현재로 옮겨 시각이 튀지 않게 한다. 100%에선 실제 시각 그대로.
+struct GameClock {
+    speed_percent: u64,
+    real_anchor_ms: u64,
+    game_anchor_ms: u64,
+}
+
+impl GameClock {
+    fn now_ms(&self, real_ms: u64) -> u64 {
+        self.game_anchor_ms + real_ms.saturating_sub(self.real_anchor_ms) * self.speed_percent / 100
+    }
+
+    fn set_speed(&mut self, real_ms: u64, percent: u32) {
+        *self = Self {
+            speed_percent: percent.clamp(10, 1000) as u64,
+            real_anchor_ms: real_ms,
+            game_anchor_ms: self.now_ms(real_ms),
+        };
+    }
+}
+
+fn real_now_ms() -> u64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as _
 }
 
 impl MobilePlatform {
@@ -55,7 +83,17 @@ impl MobilePlatform {
             vibration: Mutex::new(None),
             exit_requested: AtomicBool::new(false),
             virtual_clock_ms: AtomicU64::new(0),
+            game_clock: Mutex::new(GameClock {
+                speed_percent: 100,
+                real_anchor_ms: 0,
+                game_anchor_ms: 0,
+            }),
         }
+    }
+
+    /// 게임 속도 (퍼센트, 100 = 원래 속도, 10~1000으로 제한). 타이머·sleep이 그 배율로 흐른다.
+    pub fn set_speed(&self, percent: u32) {
+        self.game_clock.lock().unwrap().set_speed(real_now_ms(), percent);
     }
 
     /// 가상 시계 활성화 — now()가 실시간 대신 호출마다 1ms 전진하는 결정적 시계를
@@ -146,9 +184,7 @@ impl Platform for MobilePlatform {
             return Instant::from_epoch_millis(t);
         }
 
-        let since_the_epoch = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap();
-
-        Instant::from_epoch_millis(since_the_epoch.as_millis() as _)
+        Instant::from_epoch_millis(self.game_clock.lock().unwrap().now_ms(real_now_ms()))
     }
 
     fn database_repository(&self) -> &dyn wie_backend::DatabaseRepository {
@@ -179,5 +215,34 @@ impl Platform for MobilePlatform {
     fn vibrate(&self, duration_ms: u64, intensity: u8) {
         tracing::info!("vibrate({duration_ms}ms, {intensity}%)");
         *self.vibration.lock().unwrap() = Some(VibrationRequest { duration_ms, intensity });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn game_clock_scales_time_without_jumping_on_speed_change() {
+        let mut clock = GameClock {
+            speed_percent: 100,
+            real_anchor_ms: 0,
+            game_anchor_ms: 0,
+        };
+        // 100%에선 실제 시각 그대로
+        assert_eq!(clock.now_ms(1_700_000_000_000), 1_700_000_000_000);
+
+        // 3배속: 바꾼 순간은 그대로, 그 뒤 1초가 3초로 흐른다
+        clock.set_speed(1_700_000_000_000, 300);
+        assert_eq!(clock.now_ms(1_700_000_000_000), 1_700_000_000_000);
+        assert_eq!(clock.now_ms(1_700_000_001_000), 1_700_000_003_000);
+
+        // 0.5배속으로 바꿔도 이어서 흐른다
+        clock.set_speed(1_700_000_001_000, 50);
+        assert_eq!(clock.now_ms(1_700_000_003_000), 1_700_000_004_000);
+
+        // 범위를 벗어난 배율은 10%~1000%로 제한
+        clock.set_speed(1_700_000_003_000, 0);
+        assert_eq!(clock.now_ms(1_700_000_004_000), 1_700_000_004_100);
     }
 }

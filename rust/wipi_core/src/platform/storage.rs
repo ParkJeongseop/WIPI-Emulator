@@ -1,4 +1,7 @@
-use std::{fs, path::{Path, PathBuf}};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 /// The directory a title's persistent storage lives in under `base`.
 ///

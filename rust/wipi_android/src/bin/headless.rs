@@ -122,21 +122,40 @@ fn run_session(game_path: &str, data_dir: PathBuf, max_seconds: u64, key_spec: &
 
     session::start(game_path.to_owned(), fs::read(game_path)?, data_dir, None)?;
 
+    // WIE_SPEED=<퍼센트>: 게임 속도 배율
+    if let Some(speed) = std::env::var("WIE_SPEED").ok().and_then(|x| x.parse().ok()) {
+        session::set_speed(speed);
+    }
+    // WIE_CHEAT=<값>: 실행이 끝날 때 4바이트 값 검색 결과를 찍는다 (치트 경로 점검용)
+    let cheat_value: Option<u32> = std::env::var("WIE_CHEAT").ok().and_then(|x| x.parse().ok());
+
     let start = Instant::now();
     let mut next_key = 0;
     let mut last_frames = 0;
+    // 내용이 달라진 프레임 수 — 같은 화면을 다시 그리기만 하는 타이틀에서도 게임 진행 속도가 보인다
+    let mut last_pixels: Vec<u8> = Vec::new();
     for second in 1..=max_seconds {
+        let mut changed = 0;
         while start.elapsed() < Duration::from_secs(second) {
             while next_key < keys.len() && keys[next_key].0 <= start.elapsed() {
                 let (_, name, down) = keys[next_key];
-                if down { session::key_down(name) } else { session::key_up(name) }
+                if down {
+                    session::key_down(name)
+                } else {
+                    session::key_up(name)
+                }
                 next_key += 1;
             }
-            session::take_frame();
-            std::thread::sleep(Duration::from_millis(16));
+            if let Some(frame) = session::take_frame()
+                && frame.pixels != last_pixels
+            {
+                changed += 1;
+                last_pixels = frame.pixels;
+            }
+            std::thread::sleep(Duration::from_millis(4));
         }
         let frames = session::frame_count();
-        eprintln!("t={second}s fps={} load={}%", frames - last_frames, session::cpu_load());
+        eprintln!("t={second}s fps={} changed={changed} load={}%", frames - last_frames, session::cpu_load());
         last_frames = frames;
         if let Some(error) = session::take_error() {
             eprintln!("session error: {}", error.message);
@@ -144,6 +163,16 @@ fn run_session(game_path: &str, data_dir: PathBuf, max_seconds: u64, key_spec: &
         }
     }
     eprintln!("frames={last_frames}");
+    if let Some(value) = cheat_value {
+        let search_start = Instant::now();
+        let matches = session::cheat_search(value, 4, false);
+        eprintln!(
+            "cheat supported={} search({value})={matches:?} in {:?} results={:x?}",
+            session::cheat_supported(),
+            search_start.elapsed(),
+            session::cheat_results(8)
+        );
+    }
     session::stop();
 
     Ok(())
@@ -245,7 +274,10 @@ fn run() -> anyhow::Result<()> {
             if let Some(frame) = &last_frame {
                 let non_black = frame.pixels.chunks(4).filter(|p| p[0] != 0 || p[1] != 0 || p[2] != 0).count();
                 write_bmp(&format!("{out_path}_{saved_seconds:03}.bmp"), frame)?;
-                eprintln!("t={saved_seconds}s ticks={ticks} fps={frames_this_second} busy={}% non_black_pixels={non_black}", busy_this_second.as_millis() / 10);
+                eprintln!(
+                    "t={saved_seconds}s ticks={ticks} fps={frames_this_second} busy={}% non_black_pixels={non_black}",
+                    busy_this_second.as_millis() / 10
+                );
             } else {
                 eprintln!("t={saved_seconds}s ticks={ticks} (no frame painted yet)");
             }

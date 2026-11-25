@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use jni::{
     JNIEnv,
     objects::{JByteArray, JClass, JIntArray, JObject, JString},
-    sys::{jboolean, jstring},
+    sys::{jboolean, jint, jlong, jlongArray, jstring},
 };
 
 use wipi_core::session;
@@ -134,6 +134,80 @@ pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeSetPaused(_e
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeSetVolume(_env: JNIEnv, _class: JClass, pcm: f32, midi: f32) {
     session::set_volume(pcm, midi);
+}
+
+/// 게임 속도 (퍼센트, 100 = 원래 속도). 세션 시작 뒤에 호출.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeSetSpeed(_env: JNIEnv, _class: JClass, percent: jint) {
+    session::set_speed(percent.max(0) as u32);
+}
+
+// 메모리 치트 — ARM 코어로 도는 타이틀(KTF·LGT)만 지원. 모두 에뮬레이터 스레드의 응답을
+// 기다리므로 메인 스레드가 아닌 곳에서 호출할 것. 주소·값은 u32 비트 패턴을 Int로 주고받는다.
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeCheatSupported(_env: JNIEnv, _class: JClass) -> jboolean {
+    session::cheat_supported() as jboolean
+}
+
+/// 값 검색 (refine이면 직전 후보 좁히기). 일치 수, 미지원이면 -1.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeCheatSearch(
+    _env: JNIEnv,
+    _class: JClass,
+    value: jint,
+    width: jint,
+    refine: jboolean,
+) -> jlong {
+    session::cheat_search(value as u32, width as usize, refine != 0).map_or(-1, |count| count as jlong)
+}
+
+/// 검색 후보 앞쪽 `limit`개. 원소마다 상위 32비트 = 주소, 하위 32비트 = 현재 값.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeCheatResults(env: JNIEnv, _class: JClass, limit: jint) -> jlongArray {
+    let results: Vec<jlong> = session::cheat_results(limit.max(0) as usize)
+        .into_iter()
+        .map(|(address, value)| ((address as jlong) << 32) | value as jlong)
+        .collect();
+    let array = env
+        .new_long_array(results.len() as _)
+        .and_then(|array| env.set_long_array_region(&array, 0, &results).map(|_| array));
+
+    array.map_or(std::ptr::null_mut(), |array| array.into_raw())
+}
+
+/// 주소의 현재 값 (0..=u32::MAX), 읽을 수 없으면 -1
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeCheatRead(_env: JNIEnv, _class: JClass, address: jint, width: jint) -> jlong {
+    session::cheat_read(address as u32, width as usize).map_or(-1, |value| value as jlong)
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeCheatWrite(
+    _env: JNIEnv,
+    _class: JClass,
+    address: jint,
+    width: jint,
+    value: jint,
+) -> jboolean {
+    session::cheat_write(address as u32, width as usize, value as u32) as jboolean
+}
+
+/// 값을 쓰고 nativeCheatUnfreeze까지 고정한다 (매 tick 다시 씀)
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeCheatFreeze(
+    _env: JNIEnv,
+    _class: JClass,
+    address: jint,
+    width: jint,
+    value: jint,
+) -> jboolean {
+    session::cheat_freeze(address as u32, width as usize, value as u32) as jboolean
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeCheatUnfreeze(_env: JNIEnv, _class: JClass, address: jint) {
+    session::cheat_unfreeze(address as u32);
 }
 
 /// Share of the last second the emulator thread spent running the game, 0..100.

@@ -16,9 +16,15 @@ use std::{
     time::{Duration, Instant},
 };
 
-use wie_backend::{Event, KeyCode};
+use wie_backend::{Emulator, Event, GuestMemory, KeyCode};
 
-use crate::platform::{CapturedFrame, MobilePlatform, SharedPlatform, VibrationRequest};
+use crate::{
+    cheat::Cheats,
+    platform::{CapturedFrame, MobilePlatform, SharedPlatform, VibrationRequest},
+};
+
+/// 에뮬레이터 스레드에서 실행할 치트 작업. 게스트 메모리는 에뮬레이터가 소유하므로 그 스레드만 만진다.
+type CheatJob = Box<dyn FnOnce(&mut Cheats, &mut dyn GuestMemory) + Send>;
 
 enum KeyEvent {
     Down(KeyCode),
@@ -49,6 +55,7 @@ const IDLE_SLEEP: Duration = Duration::from_micros(500);
 
 struct Session {
     key_tx: Sender<KeyEvent>,
+    cheat_tx: Sender<CheatJob>,
     stop: Arc<AtomicBool>,
     paused: Arc<AtomicBool>,
     /// Share of the last second the emulator thread spent running the title, in percent. At 100
@@ -94,6 +101,7 @@ fn emulator_thread(
     filename: String,
     game_data: Vec<u8>,
     key_rx: Receiver<KeyEvent>,
+    cheat_rx: Receiver<CheatJob>,
     stop: Arc<AtomicBool>,
     paused: Arc<AtomicBool>,
     load: Arc<AtomicU32>,
@@ -113,10 +121,15 @@ fn emulator_thread(
     };
 
     let mut pressed: HashMap<KeyCode, Instant> = HashMap::new();
+    let mut cheats = Cheats::default();
     let mut load_window = Instant::now();
     let mut busy = Duration::ZERO;
 
     while !stop.load(Ordering::SeqCst) {
+        // 치트 작업은 일시정지 중에도 처리한다 (치트 화면은 일시정지 메뉴에서 연다).
+        // 게스트 메모리가 없는 타이틀이면 작업을 버려 요청 쪽이 "미지원"을 받는다.
+        run_cheat_jobs(emulator.as_mut(), &mut cheats, &cheat_rx);
+
         // 일시정지: tick을 멈춰 게임 세계를 얼린다 (RetroArch 등 에뮬 표준의 auto-pause).
         // 키 이벤트는 채널에 남아 재개 후 처리된다.
         if paused.load(Ordering::SeqCst) {
@@ -128,6 +141,12 @@ fn emulator_thread(
         }
 
         let tick_start = Instant::now();
+
+        if cheats.has_frozen()
+            && let Some(memory) = emulator.memory()
+        {
+            cheats.apply(memory);
+        }
 
         // 코어의 panic(에뮬레이션 버그)이 스레드를 조용히 죽이면 앱은 "프리즈"로만
         // 보인다 — catch_unwind로 Runtime 에러로 승격해 호스트가 표시하게 한다.
@@ -203,6 +222,68 @@ fn emulator_thread(
     }
 }
 
+fn run_cheat_jobs(emulator: &mut dyn Emulator, cheats: &mut Cheats, cheat_rx: &Receiver<CheatJob>) {
+    while let Ok(job) = cheat_rx.try_recv() {
+        if let Some(memory) = emulator.memory() {
+            job(cheats, memory);
+        }
+    }
+}
+
+/// 치트 작업을 에뮬레이터 스레드에서 실행하고 결과를 기다린다. 세션이 없거나 타이틀에 게스트
+/// 메모리가 없으면(순수 자바 타이틀) None. 검색은 수백 ms가 걸릴 수 있으니 UI 스레드에서 부르지 말 것.
+fn with_cheats<R: Send + 'static>(job: impl FnOnce(&mut Cheats, &mut dyn GuestMemory) -> R + Send + 'static) -> Option<R> {
+    // 기다리는 동안 SESSION을 잡고 있으면 UI 스레드의 프레임 폴링이 막힌다
+    let cheat_tx = SESSION.lock().unwrap().as_ref()?.cheat_tx.clone();
+    let (reply_tx, reply_rx) = channel();
+    cheat_tx
+        .send(Box::new(move |cheats, memory| {
+            let _ = reply_tx.send(job(cheats, memory));
+        }))
+        .ok()?;
+
+    reply_rx.recv().ok()
+}
+
+/// 실행 중인 타이틀이 메모리 치트를 지원하는지 (ARM 코어로 도는 KTF·LGT 타이틀)
+pub fn cheat_supported() -> bool {
+    with_cheats(|_, _| ()).is_some()
+}
+
+/// 값 검색. `refine`이 false면 새 검색(`width` 1·2·4바이트), true면 직전 후보를 좁힌다.
+/// 일치 수를 반환한다 — cheat::MAX_CANDIDATES를 넘으면 앞쪽 후보만 보관된 상태다.
+pub fn cheat_search(value: u32, width: usize, refine: bool) -> Option<u64> {
+    with_cheats(move |cheats, memory| {
+        if refine {
+            cheats.refine(memory, value)
+        } else {
+            cheats.search(memory, value, width)
+        }
+    })
+}
+
+/// 검색 후보 앞쪽 `limit`개의 (주소, 현재 값)
+pub fn cheat_results(limit: usize) -> Vec<(u32, u32)> {
+    with_cheats(move |cheats, memory| cheats.results(memory, limit)).unwrap_or_default()
+}
+
+pub fn cheat_read(address: u32, width: usize) -> Option<u32> {
+    with_cheats(move |_, memory| Cheats::read(memory, address, width)).flatten()
+}
+
+pub fn cheat_write(address: u32, width: usize, value: u32) -> bool {
+    with_cheats(move |_, memory| Cheats::write(memory, address, width, value)).unwrap_or(false)
+}
+
+/// 값을 쓰고 풀 때까지 고정한다 (매 tick 다시 씀)
+pub fn cheat_freeze(address: u32, width: usize, value: u32) -> bool {
+    with_cheats(move |cheats, memory| cheats.freeze(memory, address, width, value)).unwrap_or(false)
+}
+
+pub fn cheat_unfreeze(address: u32) {
+    with_cheats(move |cheats, _| cheats.unfreeze(address));
+}
+
 /// Asks the scheduler to treat the emulator thread as the one the user is looking at. Without it
 /// iOS is free to run the thread on an efficiency core, several times slower than a performance
 /// core, and the interpreter has no headroom to give away.
@@ -246,6 +327,7 @@ pub fn start(filename: String, game_data: Vec<u8>, data_dir: PathBuf, soundfont_
 
     let platform = Arc::new(MobilePlatform::new(data_dir, crate::SCREEN_WIDTH, crate::SCREEN_HEIGHT, soundfont_path));
     let (key_tx, key_rx) = channel();
+    let (cheat_tx, cheat_rx) = channel();
     let stop = Arc::new(AtomicBool::new(false));
     let paused = Arc::new(AtomicBool::new(false));
     let load = Arc::new(AtomicU32::new(0));
@@ -256,11 +338,12 @@ pub fn start(filename: String, game_data: Vec<u8>, data_dir: PathBuf, soundfont_
         std::thread::Builder::new()
             .name("wie-emulator".into())
             .stack_size(16 * 1024 * 1024)
-            .spawn(move || emulator_thread(platform, filename, game_data, key_rx, stop, paused, load, error))?
+            .spawn(move || emulator_thread(platform, filename, game_data, key_rx, cheat_rx, stop, paused, load, error))?
     };
 
     *session = Some(Session {
         key_tx,
+        cheat_tx,
         stop,
         paused,
         load,
@@ -285,6 +368,14 @@ pub fn set_volume(pcm: f32, midi: f32) {
     let session = SESSION.lock().unwrap();
     if let Some(session) = session.as_ref() {
         session.platform.set_volume(pcm, midi);
+    }
+}
+
+/// 게임 속도 (퍼센트, 100 = 원래 속도). 게임이 보는 시계를 그 배율로 흘린다.
+pub fn set_speed(percent: u32) {
+    let session = SESSION.lock().unwrap();
+    if let Some(session) = session.as_ref() {
+        session.platform.set_speed(percent);
     }
 }
 

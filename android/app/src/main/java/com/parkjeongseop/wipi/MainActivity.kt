@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,6 +42,7 @@ import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -116,6 +118,17 @@ class MainActivity : ComponentActivity() {
         var games by remember { mutableStateOf(library.list()) }
         var errorMessage by remember { mutableStateOf<String?>(null) }
         var showSettings by remember { mutableStateOf(false) } // iOS sheet 대응 오버레이
+        // 실행 중인 게임의 치트 상태 (게임 한 판 동안 유지) + 치트 화면 오버레이
+        var cheats by remember { mutableStateOf<CheatState?>(null) }
+        var showCheats by remember { mutableStateOf(false) }
+
+        fun closeGame() {
+            WipiNative.nativeStop()
+            cheats?.close()
+            cheats = null
+            showCheats = false
+            screen = Screen.Library
+        }
 
         emulatorActive = screen == Screen.Emulator
 
@@ -129,6 +142,7 @@ class MainActivity : ComponentActivity() {
                         entry.dataDir.mkdirs()
                         if (start(entry.gameFile.readBytes(), entry.filename, entry.dataDir)) {
                             errorMessage = null
+                            cheats = CheatState(this@MainActivity, entry.id)
                             screen = Screen.Emulator
                         } else {
                             // 동기 실패는 형식 문제가 아니라 시작 자체 실패 (형식 오류는 로드 후 kind로 안내됨)
@@ -142,6 +156,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onDelete = { entry ->
                         library.delete(entry)
+                        CheatState.forget(this@MainActivity, entry.id)
                         games = library.list()
                     },
                     onSettings = { showSettings = true },
@@ -150,14 +165,11 @@ class MainActivity : ComponentActivity() {
                 Screen.Emulator -> EmulatorScreen(
                     onError = { message ->
                         errorMessage = message
-                        WipiNative.nativeStop()
-                        screen = Screen.Library
+                        closeGame()
                     },
-                    onExit = {
-                        WipiNative.nativeStop()
-                        screen = Screen.Library
-                    },
+                    onExit = { closeGame() },
                     onSettings = { showSettings = true },
+                    onCheats = { showCheats = true },
                 )
             }
 
@@ -166,11 +178,17 @@ class MainActivity : ComponentActivity() {
                 SettingsFlow(
                     settings = settings,
                     onVolumeChanged = {
-                    val (pcm, midi) = settings.effectiveVolumes()
-                    WipiNative.nativeSetVolume(pcm, midi)
-                },
+                        val (pcm, midi) = settings.effectiveVolumes()
+                        WipiNative.nativeSetVolume(pcm, midi)
+                    },
+                    onSpeedChanged = { WipiNative.nativeSetSpeed(settings.gameSpeed) },
                     onClose = { showSettings = false },
                 )
+            }
+
+            // 치트도 오버레이 — 일시정지 메뉴에서 열고, 닫으면 일시정지 메뉴로 돌아간다
+            if (showCheats) {
+                cheats?.let { CheatScreen(state = it, onClose = { showCheats = false }) }
             }
         }
     }
@@ -185,12 +203,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** 게임 로드 및 에뮬레이터 시작 + 사운드 설정 적용 */
+    /** 게임 로드 및 에뮬레이터 시작 + 사운드·속도 설정 적용 */
     private fun start(bytes: ByteArray, filename: String, dataDir: File): Boolean {
         val ok = WipiNative.nativeStart(bytes, filename, dataDir.absolutePath, soundfontPath())
         if (ok) {
             val (pcm, midi) = settings.effectiveVolumes()
             WipiNative.nativeSetVolume(pcm, midi)
+            WipiNative.nativeSetSpeed(settings.gameSpeed)
         }
         return ok
     }
@@ -297,7 +316,7 @@ class MainActivity : ComponentActivity() {
     // ── 에뮬레이터 화면 (iOS EmulatorScreenView가 명세) ──
 
     @Composable
-    private fun EmulatorScreen(onError: (String) -> Unit, onExit: () -> Unit, onSettings: () -> Unit) {
+    private fun EmulatorScreen(onError: (String) -> Unit, onExit: () -> Unit, onSettings: () -> Unit, onCheats: () -> Unit) {
         val bitmap = remember { Bitmap.createBitmap(SCREEN_WIDTH, SCREEN_HEIGHT, Bitmap.Config.ARGB_8888) }
         val pixels = remember { IntArray(SCREEN_WIDTH * SCREEN_HEIGHT) }
         val vibrateOut = remember { LongArray(2) }
@@ -392,7 +411,12 @@ class MainActivity : ComponentActivity() {
                     } ?: Text(stringResource(R.string.emulator_loading), color = Color.White)
                 }
 
-                Keypad(hapticsEnabled = settings.keypadHaptics, modifier = Modifier.fillMaxWidth().padding(8.dp))
+                Keypad(
+                    layout = settings.keypadLayout,
+                    size = settings.keypadSize,
+                    hapticsEnabled = settings.keypadHaptics,
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                )
             }
 
             // 좌상단: 성능 표시 (설정에서 켠 경우)
@@ -443,8 +467,13 @@ class MainActivity : ComponentActivity() {
                         )
                         Text(stringResource(R.string.emulator_paused), color = Color.White, fontSize = 18.sp, modifier = Modifier.padding(top = 8.dp))
                         Text(stringResource(R.string.emulator_resume_hint), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
-                        Button(onClick = onExit, modifier = Modifier.padding(top = 24.dp)) {
-                            Text(stringResource(R.string.emulator_exit))
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 24.dp)) {
+                            FilledTonalButton(onClick = onCheats) {
+                                Text(stringResource(R.string.cheat_title))
+                            }
+                            Button(onClick = onExit) {
+                                Text(stringResource(R.string.emulator_exit))
+                            }
                         }
                     }
                 }
@@ -600,25 +629,68 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// ── 키패드 (iOS Keypad와 동일: 눌림 피드백 포함) ──
+// ── 키패드 (iOS Keypad와 동일: 배치 3종 + 키 크기, 눌림 피드백 포함) ──
 
-private val KEYPAD_ROWS = listOf(
+private typealias Key = Pair<String, String>
+
+private val DIRECTION_ROWS = listOf(
     listOf("SOFT_L" to "◁", "UP" to "▲", "SOFT_R" to "▷"),
     listOf("LEFT" to "◀", "OK" to "OK", "RIGHT" to "▶"),
     listOf("CALL" to "📞", "DOWN" to "▼", "CLR" to "CLR"),
+)
+
+private val NUMBER_ROWS = listOf(
     listOf("1" to "1", "2" to "2", "3" to "3"),
     listOf("4" to "4", "5" to "5", "6" to "6"),
     listOf("7" to "7", "8" to "8", "9" to "9"),
     listOf("*" to "*", "0" to "0", "#" to "#"),
 )
 
+// 게임패드 배치: 기능 키 한 줄 + (방향키 | 숫자키). null은 빈 칸.
+private val GAMEPAD_TOP_ROW = listOf(listOf("SOFT_L" to "◁", "CALL" to "📞", "CLR" to "CLR", "SOFT_R" to "▷"))
+
+private val DPAD_ROWS = listOf(
+    listOf(null, "UP" to "▲", null),
+    listOf("LEFT" to "◀", "OK" to "OK", "RIGHT" to "▶"),
+    listOf(null, "DOWN" to "▼", null),
+)
+
+private val KEY_SPACING = 4.dp
+
 @Composable
-fun Keypad(hapticsEnabled: Boolean, modifier: Modifier = Modifier) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        KEYPAD_ROWS.forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
-                row.forEach { (key, label) ->
-                    KeyButton(key = key, label = label, hapticsEnabled = hapticsEnabled, modifier = Modifier.weight(1f))
+fun Keypad(layout: KeypadLayout, size: KeypadSize, hapticsEnabled: Boolean, modifier: Modifier = Modifier) {
+    val keyHeight = size.keyHeight.dp
+    fun rowsHeight(rows: Int) = keyHeight * rows + KEY_SPACING * (rows - 1)
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(KEY_SPACING)) {
+        if (layout == KeypadLayout.Phone) {
+            KeyGrid(DIRECTION_ROWS + NUMBER_ROWS, hapticsEnabled, Modifier.fillMaxWidth().height(rowsHeight(7)))
+        } else {
+            KeyGrid(GAMEPAD_TOP_ROW, hapticsEnabled, Modifier.fillMaxWidth().height(keyHeight))
+            // 방향키 3줄을 숫자키 4줄 높이에 맞춘다 — 그만큼 방향키가 커진다
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth().height(rowsHeight(4))) {
+                val mirrored = layout == KeypadLayout.GamepadMirrored
+                val half = Modifier.weight(1f).fillMaxHeight()
+                KeyGrid(if (mirrored) NUMBER_ROWS else DPAD_ROWS, hapticsEnabled, half)
+                KeyGrid(if (mirrored) DPAD_ROWS else NUMBER_ROWS, hapticsEnabled, half)
+            }
+        }
+    }
+}
+
+/** 키를 격자로 채운다 — 줄과 칸이 주어진 크기를 똑같이 나눠 갖는다 */
+@Composable
+private fun KeyGrid(rows: List<List<Key?>>, hapticsEnabled: Boolean, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(KEY_SPACING)) {
+        rows.forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(KEY_SPACING), modifier = Modifier.fillMaxWidth().weight(1f)) {
+                row.forEach { cell ->
+                    val cellModifier = Modifier.weight(1f).fillMaxHeight()
+                    if (cell == null) {
+                        Spacer(cellModifier)
+                    } else {
+                        KeyButton(key = cell.first, label = cell.second, hapticsEnabled = hapticsEnabled, modifier = cellModifier)
+                    }
                 }
             }
         }
@@ -632,7 +704,6 @@ fun KeyButton(key: String, label: String, hapticsEnabled: Boolean, modifier: Mod
 
     Box(
         modifier = modifier
-            .height(44.dp)
             .background(Color(0xFF404040).copy(alpha = if (pressed) 0.6f else 1f), RoundedCornerShape(8.dp))
             .pointerInput(key) {
                 detectTapGestures(

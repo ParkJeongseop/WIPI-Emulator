@@ -177,6 +177,82 @@ pub extern "C" fn wipi_set_volume(pcm_volume: f32, midi_volume: f32) {
     session::set_volume(pcm_volume, midi_volume);
 }
 
+/// 게임 속도 (퍼센트, 100 = 원래 속도). 게임이 보는 시계를 그 배율로 흘린다. 세션 시작 뒤에 호출.
+#[unsafe(no_mangle)]
+pub extern "C" fn wipi_set_speed(percent: u32) {
+    session::set_speed(percent);
+}
+
+// 메모리 치트 — 값 검색 → 좁히기 → 쓰기/고정. ARM 코어로 도는 타이틀(KTF·LGT)만 지원한다.
+// 모두 에뮬레이터 스레드의 응답을 기다리므로(일시정지 중 최대 50ms, 검색은 더 길 수 있음)
+// 메인 스레드가 아닌 곳에서 호출할 것.
+
+/// 실행 중인 타이틀이 메모리 치트를 지원하는지
+#[unsafe(no_mangle)]
+pub extern "C" fn wipi_cheat_supported() -> bool {
+    session::cheat_supported()
+}
+
+/// 값 검색. `refine`이 false면 `width`(1·2·4)바이트 값으로 새로 찾고, true면 직전 후보를 좁힌다.
+/// 일치 수를 반환한다 (미지원이면 -1). 1,000,000개를 넘으면 앞쪽 후보만 보관된다.
+#[unsafe(no_mangle)]
+pub extern "C" fn wipi_cheat_search(value: u32, width: u8, refine: bool) -> i64 {
+    session::cheat_search(value, width as usize, refine).map_or(-1, |count| count as i64)
+}
+
+/// 검색 후보 앞쪽 `capacity`개의 주소와 현재 값을 채우고 채운 개수를 반환한다.
+///
+/// # Safety
+/// `out_addresses`와 `out_values`는 각각 `capacity`개의 u32를 쓸 수 있는 버퍼여야 한다.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn wipi_cheat_results(out_addresses: *mut u32, out_values: *mut u32, capacity: usize) -> usize {
+    if out_addresses.is_null() || out_values.is_null() {
+        return 0;
+    }
+    let results = session::cheat_results(capacity);
+    for (index, (address, value)) in results.iter().enumerate() {
+        unsafe {
+            *out_addresses.add(index) = *address;
+            *out_values.add(index) = *value;
+        }
+    }
+
+    results.len()
+}
+
+/// 주소의 현재 값을 읽는다. 읽을 수 없으면 false.
+///
+/// # Safety
+/// `out_value`는 u32 하나를 쓸 수 있는 포인터여야 한다.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn wipi_cheat_read(address: u32, width: u8, out_value: *mut u32) -> bool {
+    let Some(value) = session::cheat_read(address, width as usize) else {
+        return false;
+    };
+    if !out_value.is_null() {
+        unsafe { *out_value = value };
+    }
+
+    true
+}
+
+/// 주소에 값을 한 번 쓴다.
+#[unsafe(no_mangle)]
+pub extern "C" fn wipi_cheat_write(address: u32, width: u8, value: u32) -> bool {
+    session::cheat_write(address, width as usize, value)
+}
+
+/// 주소에 값을 쓰고 wipi_cheat_unfreeze까지 고정한다 (매 tick 다시 씀).
+#[unsafe(no_mangle)]
+pub extern "C" fn wipi_cheat_freeze(address: u32, width: u8, value: u32) -> bool {
+    session::cheat_freeze(address, width as usize, value)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn wipi_cheat_unfreeze(address: u32) {
+    session::cheat_unfreeze(address);
+}
+
 /// Share of the last second the emulator thread spent running the game, 0..100. Near 100 the
 /// device is the limit on the frame rate; well below it the game is pacing itself.
 #[unsafe(no_mangle)]

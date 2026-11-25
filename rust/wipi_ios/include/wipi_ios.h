@@ -55,6 +55,38 @@ void wipi_set_paused(bool paused);
 // loudness vary per game, so users need balance control.
 void wipi_set_volume(float pcm_volume, float midi_volume);
 
+// Game speed in percent (100 = original). Scales the clock the game sees, so
+// timers and sleeps run that much faster or slower. Call after wipi_start.
+void wipi_set_speed(uint32_t percent);
+
+// Memory cheats: search a value, narrow the candidates down, then write or
+// freeze it. Only titles running on the ARM core (KTF, LGT) support them.
+// Every call waits for the emulator thread (up to 50 ms while paused, longer
+// for a search), so call them off the main thread.
+
+// Whether the running title supports memory cheats.
+bool wipi_cheat_supported(void);
+
+// Searches for a value. With refine false, starts a new search for a value of
+// `width` (1, 2 or 4) bytes; with refine true, narrows the previous candidates
+// to those now holding `value`. Returns the number of matches, or -1 when
+// unsupported. Past 1,000,000 matches only the first ones are kept.
+int64_t wipi_cheat_search(uint32_t value, uint8_t width, bool refine);
+
+// Fills the first `capacity` candidates' addresses and current values and
+// returns how many were written.
+size_t wipi_cheat_results(uint32_t *out_addresses, uint32_t *out_values, size_t capacity);
+
+// Reads the current value at an address. Returns false when unreadable.
+bool wipi_cheat_read(uint32_t address, uint8_t width, uint32_t *out_value);
+
+// Writes a value once.
+bool wipi_cheat_write(uint32_t address, uint8_t width, uint32_t value);
+
+// Writes a value and keeps rewriting it every tick until wipi_cheat_unfreeze.
+bool wipi_cheat_freeze(uint32_t address, uint8_t width, uint32_t value);
+void wipi_cheat_unfreeze(uint32_t address);
+
 // Share of the last second the emulator thread spent running the game,
 // 0..100. Near 100 the device limits the frame rate; well below it the game
 // is pacing itself.

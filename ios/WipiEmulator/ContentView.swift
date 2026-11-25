@@ -5,12 +5,14 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var library = GameLibrary()
     @State private var running = false
+    @State private var runningGameId = ""
     @State private var errorMessage: String?
 
     var body: some View {
         Group {
             if running {
                 EmulatorScreenView(
+                    gameId: runningGameId,
                     onError: { message in
                         errorMessage = message
                         running = false
@@ -34,6 +36,7 @@ struct ContentView: View {
 
     private func play(_ entry: GameEntry) {
         try? FileManager.default.createDirectory(at: entry.dataDir, withIntermediateDirectories: true)
+        runningGameId = entry.id
         start(gameData: entry.gameData, filename: entry.filename, dataDir: entry.dataDir)
     }
 

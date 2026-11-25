@@ -80,6 +80,7 @@ final class GameLibrary: ObservableObject {
 
     func delete(_ entry: GameEntry) {
         try? FileManager.default.removeItem(at: root.appendingPathComponent(entry.id, isDirectory: true))
+        UserDefaults.standard.removeObject(forKey: CheatModel.storageKey(gameId: entry.id)) // 저장된 치트도 함께
         reload()
     }
 

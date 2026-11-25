@@ -9,7 +9,7 @@
 - **wie 소비 전략**(2026-07-21 갱신): 본인 포크 **ParkJeongseop/wie** + rev 고정으로 소비.
   - 포크 main은 upstream(dlunch/wie) 추적, 기능은 브랜치로 작업 → upstream PR + 앱은 포크 rev 갱신으로 먼저 적용.
   - upstream 머지 후엔 해당 upstream rev로 복귀 (포크는 "미머지 델타"만 담는 얇은 층 유지 — 하드포크 금지).
-  - 현재 rev: 408fdd0f (sync/upstream-2026-11-04 — upstream v0.2.19 동기화, RustJava 0.4.1+포크 04c7afe; 이전: sync/upstream-2026-09-21 — upstream v0.1.4 동기화+우리 델타, LGT strncat·util·stdlib·LWC·MC_im, SK-VM 키코드·프로퍼티·입력기·TextField, LBMP 마스크·그레이, LGT DrawString y=top, ez-java, KTF db seek·catch 예외 객체·레코드 DB 테이블, 메모리 수치 16MB, sprintf %i/정밀도, MC_fsRename, MC_grpEncodeImage/encodeImage, KTF 파일 API 이름 255·jar 리소스 비시드·NOENT, GetAccessLevel/GetExecNames, 프레임버퍼 destroy null 무시, LGT MC_fsList, msf.io.Message·wec.SYSTheme·wec.DMInfo, MC_grpRepaint 더티 스크린 FB present, KTF Java 점프 64비트 반환, 게임이 지운 동봉 파일 삭제 원장(.wie-removed), TIMEZONE 등 시스템 프로퍼티, java_check_type JVM subtyping, kfc 위젯 7클래스·lwc ButtonComponent·layout/isShown·setInputMethodListener, PlayListener END_OF_DATA(시스템 이벤트 큐·static 루트), fault 로그 스택, Clip null 데이터 NPE, AID 불일치 jar 폴백, ContainerComponent 자식 목록, PHONENUMBER 4자리 "0100", LGT 이미지 RGB565+알파 평면·MC_grpDecodeNextImage, KTF MC_GrpImage 규격 레코드(img·mask 핸들, RGB565+알파 마스크), KTF 그리기 컨텍스트 클립, LGT 화면 24줄 후행 여유·GC 해제 실패 누수 처리, LGT 오프스크린 FB destroy null 무시, LGT `.raptor` 진입점, WIPI-C 레코드 목록 오름차순, LGT MC_grpPostEvent·GetCurProgramID, lwc 셸 표시(net.wie.ShellCard), LGT TimerTask vtable 슬롯, KTF 예외 로그 메시지, 동봉 qtpdb DB(.idx/.db) 첫 열기 시드, KTF Java 인터페이스 호출 지점 트레이스, jar 바이트코드 클래스는 client.bin AOT 우선, KTF 테이블7 슬롯11=MC_fsTotalSpace, KTF 마스크 없는 이미지 마젠타 투명, KTF MC_knlGetDLLInterface·MXUserMemInterf, KTF GC 보수적 게스트 루트 스캔·배열 클래스 Object vtable, KTF init 콜백 throw-object 슬롯, Graphics getPixels/setPixels/getRGBPixels, KTF 예외 로그에 호출 지점 LR, InputStreamReader.read 요청 길이 채움, 새 프레임버퍼 검정 초기화, lwc Component setEventListener/setBackground/setForeground·ContainerComponent.removeAllComponents·ProgressComponent, java_throw 호출 지점 로그, BMP 키 인덱스 = biClrImportant 하위 바이트, KTF MC_knlFree 무효 핸들 무시, 파일은 open 시 생성·LGT 0x195 MC_fsFileAttribute, LGT MC_knlExit 0x68, MEDIADEVICES=SMAF, MC_fsMkDir 디렉터리 stat, SK-VM Xce MIDlet-Key 에뮬 가입자 재발급, PHONEMODEL=LG-KH1300, KTF 재배치 모듈 감지·재배치[로더 미완, 깨끗한 에러]). RustJava 포크 patch는 c320364. 로컬 ../wie 클론은 코어 디버깅 시 path 전환용.
+  - 현재 rev: acb08ea8 (프런트엔드용 게스트 메모리 접근 `Emulator::memory()`·`GuestMemory::data_ranges` 추가; 그 앞 408fdd0f: sync/upstream-2026-11-04 — upstream v0.2.19 동기화, RustJava 0.4.1+포크 04c7afe; 이전: sync/upstream-2026-09-21 — upstream v0.1.4 동기화+우리 델타, LGT strncat·util·stdlib·LWC·MC_im, SK-VM 키코드·프로퍼티·입력기·TextField, LBMP 마스크·그레이, LGT DrawString y=top, ez-java, KTF db seek·catch 예외 객체·레코드 DB 테이블, 메모리 수치 16MB, sprintf %i/정밀도, MC_fsRename, MC_grpEncodeImage/encodeImage, KTF 파일 API 이름 255·jar 리소스 비시드·NOENT, GetAccessLevel/GetExecNames, 프레임버퍼 destroy null 무시, LGT MC_fsList, msf.io.Message·wec.SYSTheme·wec.DMInfo, MC_grpRepaint 더티 스크린 FB present, KTF Java 점프 64비트 반환, 게임이 지운 동봉 파일 삭제 원장(.wie-removed), TIMEZONE 등 시스템 프로퍼티, java_check_type JVM subtyping, kfc 위젯 7클래스·lwc ButtonComponent·layout/isShown·setInputMethodListener, PlayListener END_OF_DATA(시스템 이벤트 큐·static 루트), fault 로그 스택, Clip null 데이터 NPE, AID 불일치 jar 폴백, ContainerComponent 자식 목록, PHONENUMBER 4자리 "0100", LGT 이미지 RGB565+알파 평면·MC_grpDecodeNextImage, KTF MC_GrpImage 규격 레코드(img·mask 핸들, RGB565+알파 마스크), KTF 그리기 컨텍스트 클립, LGT 화면 24줄 후행 여유·GC 해제 실패 누수 처리, LGT 오프스크린 FB destroy null 무시, LGT `.raptor` 진입점, WIPI-C 레코드 목록 오름차순, LGT MC_grpPostEvent·GetCurProgramID, lwc 셸 표시(net.wie.ShellCard), LGT TimerTask vtable 슬롯, KTF 예외 로그 메시지, 동봉 qtpdb DB(.idx/.db) 첫 열기 시드, KTF Java 인터페이스 호출 지점 트레이스, jar 바이트코드 클래스는 client.bin AOT 우선, KTF 테이블7 슬롯11=MC_fsTotalSpace, KTF 마스크 없는 이미지 마젠타 투명, KTF MC_knlGetDLLInterface·MXUserMemInterf, KTF GC 보수적 게스트 루트 스캔·배열 클래스 Object vtable, KTF init 콜백 throw-object 슬롯, Graphics getPixels/setPixels/getRGBPixels, KTF 예외 로그에 호출 지점 LR, InputStreamReader.read 요청 길이 채움, 새 프레임버퍼 검정 초기화, lwc Component setEventListener/setBackground/setForeground·ContainerComponent.removeAllComponents·ProgressComponent, java_throw 호출 지점 로그, BMP 키 인덱스 = biClrImportant 하위 바이트, KTF MC_knlFree 무효 핸들 무시, 파일은 open 시 생성·LGT 0x195 MC_fsFileAttribute, LGT MC_knlExit 0x68, MEDIADEVICES=SMAF, MC_fsMkDir 디렉터리 stat, SK-VM Xce MIDlet-Key 에뮬 가입자 재발급, PHONEMODEL=LG-KH1300, KTF 재배치 모듈 감지·재배치[로더 미완, 깨끗한 에러]). RustJava 포크 patch는 c320364. 로컬 ../wie 클론은 코어 디버깅 시 path 전환용.
 - **FFI는 wie_app의 WieWeb 4-메서드 모델**을 따름: start / getFrame(폴링) / keyDown / keyUp.
   콜백 없음 — UI가 60fps로 프레임을 폴링. 키코드는 문자열("UP","OK","1","*","SOFT_L"...).
 - **라이선스**: wie·RustJava·smaf·wipi 전부 MIT (저작권자 Inseok Lee). 고지 의무만 있음.
@@ -86,6 +86,12 @@ mkdir -p "$DATA/Documents/games/test" && cp <게임.zip> "$DATA/Documents/games/
 printf '{"name":"테스트","filename":"game.zip"}' > "$DATA/Documents/games/test/meta.json"
 xcrun simctl launch --console-pty "iPhone 17" com.parkjeongseop.wipi   # --console-pty로 tracing 로그(stderr) 확인
 # 탭은 cliclick(brew) 사용 — 시뮬레이터 창 좌표로 클릭
+# Xcode 27은 Simulator.app 대신 DeviceHub.app(/Applications/Xcode.app/Contents/Applications/)이 시뮬레이터 창이다.
+#  - 스크린샷은 simctl로(screencapture는 화면 기록 권한 대화상자를 띄움). 디스플레이가 둘인 기기(iPhone Duo)는
+#    `xcrun simctl io <udid> screenshot --display=3 <파일>` (3=펼친 화면, 1=커버 화면)
+#  - 탭은 cliclick c:, 스크롤은 cliclick 드래그가 안 먹는다 → CGEvent로 leftMouseDown/Dragged×30/Up을 16ms 간격으로 보낸다
+#  - 글자 입력은 DeviceHub 툴바의 키보드 버튼을 켠 뒤 System Events keystroke
+#  - 시뮬레이터를 하나 더 부팅하면 스왑이 12GB까지 차서 디스크가 바닥난다 — 이미 부팅된 것 하나만 쓴다
 ```
 
 ## 현재 상태 (2026-07-18)
@@ -314,3 +320,24 @@ iOS 타깃/폴더 WieApp → **WipiEmulator** (WieCore→WipiCore, 스킴/앱 �
   호스트가 kind로 한국어 카피 선택(양 플랫폼 동일 문구, iOS WipiCore.describeError / Android pendingError()) +
   둘째 줄에 진단 원문(호환성 제보용). 시작 동기 실패는 "게임을 시작할 수 없어요. 다시 시도해 주세요."
   (형식 언급 제거 — 동기 실패는 형식과 무관). 검증: 가짜 zip → LoadFailed 문구+EOCD 원문 배너, 리듬스타 회귀 OK.
+
+## 피드백 메일 기능 (2026-11-26) — 키패드 레이아웃 · 게임 속도 · 메모리 치트
+- **키패드 레이아웃**: 설정 `keypadLayout` = phone(기본, 3×7) | gamepad(위 줄 소프트키·통화·CLR, 왼쪽 십자키+OK,
+  오른쪽 숫자 3×4) | gamepadMirrored(좌우 반전). `keypadSize` = small | normal | large (iOS 33/40/50pt, Android 36/44/54dp).
+  게임패드 배치는 키패드가 3줄 낮아져 게임 화면이 그만큼 커진다. iOS Keypad.swift / Android MainActivity의 Keypad·KeyGrid.
+- **게임 속도**: 설정 `gameSpeed`(퍼센트 50/100/150/200/300, 전역). `MobilePlatform::now()`가 `GameClock`으로 시간을 늘리거나 줄인다
+  (속도를 바꾸는 순간 시간이 튀지 않게 앵커를 다시 잡음, 10..=1000 clamp). 소리는 원래 속도. FFI `wipi_set_speed(percent)` /
+  `nativeSetSpeed(percent)` — 게임 시작 직후와 설정 변경 시 호출. 실측: 데모가 300%에서 약 2.5~2.8배(상대 타이머의 실시간 오버헤드).
+- **메모리 치트**(`wipi_core/src/cheat.rs`): 값 검색 → 게임에서 값을 바꾼 뒤 좁히기 → 주소 저장 → 쓰기/고정.
+  - `Cheats` 상태는 에뮬레이터 스레드 소유. 호스트 호출은 채널로 넘긴 작업이 루프 맨 위에서(일시정지 중에도) 실행되고,
+    고정 값은 매 tick 직전에 다시 쓴다. 후보 100만 개 초과면 목록을 버리고 개수만 돌려준다(`MAX_CANDIDATES`).
+  - ARM 타이틀(KTF/LGT)만 — wie `Emulator::memory()`가 Some일 때. SK-VM/J2ME는 `cheat_supported=false` → "지원하지 않음" 안내.
+  - FFI: iOS `wipi_cheat_supported/search/results/read/write/freeze/unfreeze`, Android `nativeCheat*`
+    (`nativeCheatResults`는 `주소<<32 | 값` LongArray, `nativeCheatRead`는 실패 시 -1). 4바이트 값은 부호 있는 수로, 1·2바이트는 부호 없이 표시.
+  - 저장: 게임 id별(iOS UserDefaults `cheats.<id>`, Android prefs). **고정 상태는 저장하지 않는다** — 재시작하면 주소가 바뀔 수 있어
+    저장된 치트는 꺼진 채 복원되고, 행에 "현재 값"을 보여 줘 주소가 아직 맞는지 판단하게 한다. 게임 삭제 시 함께 지운다.
+  - UI: 일시정지 오버레이의 "치트" 버튼 → iOS 시트(CheatView.swift) / Android 전체 화면(Cheats.kt). 목록은 앞 50개만.
+- **모드**: 별도 기능 없음 — 아카이브는 서명 검사 없이 그대로 로드되므로 수정한 zip/jar을 임포트하면 된다.
+- **headless**: `WIE_SPEED=<퍼센트>`, `WIE_CHEAT=<값>`(검색 결과 개수 출력), 초당 줄에 `changed=`(내용이 바뀐 프레임 수) 추가.
+- 검증: `cargo test -p wipi_core`(게임 시계·치트), headless 속도 50/100/300% → changed 10/19/47, Android AVD와 iOS 시뮬레이터(iPhone Duo)에서
+  데모로 레이아웃 3종·크기·3× 속도·검색 → 좁히기(1개) → 저장 → 고정 → 재시작 후 복원(고정 꺼짐)까지 확인. 실기기는 미검증.

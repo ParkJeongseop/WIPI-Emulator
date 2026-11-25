@@ -76,6 +76,55 @@ enum WipiCore {
         wipi_set_volume(pcm, midi)
     }
 
+    /// 게임 속도 (퍼센트, 100 = 원래 속도). 게임이 보는 시계를 그 배율로 흘린다. start 뒤에 호출.
+    static func setSpeed(percent: Int) {
+        wipi_set_speed(UInt32(max(percent, 0)))
+    }
+
+    // 메모리 치트 — ARM 코어로 도는 타이틀(KTF·LGT)만 지원. 모두 에뮬레이터 스레드의 응답을 기다리므로
+    // (일시정지 중 최대 50ms, 검색은 더 길 수 있음) 메인 스레드에서 부르지 말 것.
+
+    /// 실행 중인 타이틀이 메모리 치트를 지원하는지
+    static func cheatSupported() -> Bool {
+        wipi_cheat_supported()
+    }
+
+    /// 값 검색 (width 1·2·4바이트). refine이면 직전 후보를 좁힌다. 일치 수, 미지원이면 nil.
+    static func cheatSearch(value: UInt32, width: Int, refine: Bool) -> Int? {
+        let count = wipi_cheat_search(value, UInt8(width), refine)
+        return count < 0 ? nil : Int(count)
+    }
+
+    /// 검색 후보 앞쪽 limit개의 주소와 현재 값
+    static func cheatResults(limit: Int) -> [CheatResult] {
+        var addresses = [UInt32](repeating: 0, count: limit)
+        var values = [UInt32](repeating: 0, count: limit)
+        let count = wipi_cheat_results(&addresses, &values, limit)
+        return (0..<count).map { CheatResult(address: addresses[$0], value: values[$0]) }
+    }
+
+    /// 주소의 현재 값 (읽을 수 없으면 nil)
+    static func cheatRead(address: UInt32, width: Int) -> UInt32? {
+        var value: UInt32 = 0
+        return wipi_cheat_read(address, UInt8(width), &value) ? value : nil
+    }
+
+    /// 주소에 값을 한 번 쓴다
+    @discardableResult
+    static func cheatWrite(address: UInt32, width: Int, value: UInt32) -> Bool {
+        wipi_cheat_write(address, UInt8(width), value)
+    }
+
+    /// 값을 쓰고 cheatUnfreeze까지 고정한다 (매 tick 다시 씀)
+    @discardableResult
+    static func cheatFreeze(address: UInt32, width: Int, value: UInt32) -> Bool {
+        wipi_cheat_freeze(address, UInt8(width), value)
+    }
+
+    static func cheatUnfreeze(address: UInt32) {
+        wipi_cheat_unfreeze(address)
+    }
+
     static func stop() {
         wipi_stop()
     }

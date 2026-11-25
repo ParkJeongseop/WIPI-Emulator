@@ -10,6 +10,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,12 +28,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,17 +79,68 @@ class Settings(context: Context) {
         get() = prefs.getBoolean("showPerformance", false)
         set(value) = prefs.edit { putBoolean("showPerformance", value) }
 
+    // 아래 셋은 에뮬 화면이 뒤에 떠 있는 채로 바뀌므로 Compose 상태로 들고 있다 (바꾸면 바로 다시 그려짐)
+
+    private val keypadLayoutState = mutableStateOf(
+        KeypadLayout.entries.firstOrNull { it.name == prefs.getString("keypadLayout", null) } ?: KeypadLayout.Phone,
+    )
+    var keypadLayout: KeypadLayout
+        get() = keypadLayoutState.value
+        set(value) {
+            keypadLayoutState.value = value
+            prefs.edit { putString("keypadLayout", value.name) }
+        }
+
+    private val keypadSizeState = mutableStateOf(
+        KeypadSize.entries.firstOrNull { it.name == prefs.getString("keypadSize", null) } ?: KeypadSize.Normal,
+    )
+    var keypadSize: KeypadSize
+        get() = keypadSizeState.value
+        set(value) {
+            keypadSizeState.value = value
+            prefs.edit { putString("keypadSize", value.name) }
+        }
+
+    /** 게임 속도 (퍼센트, 100 = 원래 속도) */
+    private val gameSpeedState = mutableIntStateOf(prefs.getInt("gameSpeed", 100))
+    var gameSpeed: Int
+        get() = gameSpeedState.intValue
+        set(value) {
+            gameSpeedState.intValue = value
+            prefs.edit { putInt("gameSpeed", value) }
+        }
+
     /** 현재 설정 기준 유효 볼륨 (pcm, midi — 사운드 off면 0) */
     fun effectiveVolumes(): Pair<Float, Float> =
         if (soundEnabled) pcmVolume to midiVolume else 0f to 0f
 }
+
+/** 화면 키패드 배치. 값 이름이 저장 형식이다 (iOS KeypadLayout의 rawValue와 같은 구성). */
+enum class KeypadLayout(val labelRes: Int) {
+    /** 피처폰 그대로: 방향키·소프트키 3줄 + 숫자 4줄 */
+    Phone(R.string.keypad_layout_phone),
+
+    /** 왼쪽 방향키 + 오른쪽 숫자키 — 줄 수가 줄어 게임 화면이 커진다 */
+    Gamepad(R.string.keypad_layout_gamepad),
+
+    /** Gamepad의 좌우 반전 (방향키 오른쪽) */
+    GamepadMirrored(R.string.keypad_layout_gamepad_mirrored),
+}
+
+enum class KeypadSize(val labelRes: Int, val keyHeight: Int) {
+    Small(R.string.keypad_size_small, 36),
+    Normal(R.string.keypad_size_normal, 44),
+    Large(R.string.keypad_size_large, 54),
+}
+
+val GAME_SPEEDS = listOf(50, 100, 150, 200, 300)
 
 // ── 설정 플로우: 설정 ⇄ 고지 목록 ⇄ 라이선스 상세 ──
 
 private enum class SettingsPage { Settings, Licenses }
 
 @Composable
-fun SettingsFlow(settings: Settings, onVolumeChanged: () -> Unit, onClose: () -> Unit) {
+fun SettingsFlow(settings: Settings, onVolumeChanged: () -> Unit, onSpeedChanged: () -> Unit, onClose: () -> Unit) {
     var page by remember { mutableStateOf(SettingsPage.Settings) }
     var detail by remember { mutableStateOf<License?>(null) }
 
@@ -105,6 +161,7 @@ fun SettingsFlow(settings: Settings, onVolumeChanged: () -> Unit, onClose: () ->
         else -> SettingsPage(
             settings = settings,
             onVolumeChanged = onVolumeChanged,
+            onSpeedChanged = onSpeedChanged,
             onShowLicenses = { page = SettingsPage.Licenses },
             onBack = onClose,
         )
@@ -139,8 +196,48 @@ private fun CategoryHeader(title: String) {
     )
 }
 
+/** 몇 개 중 하나를 고르는 설정 행 (Material 3 segmented button) */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SettingsPage(settings: Settings, onVolumeChanged: () -> Unit, onShowLicenses: () -> Unit, onBack: () -> Unit) {
+private fun <T> ChoiceItem(title: String, description: String?, options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = {
+            Column {
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    options.forEachIndexed { index, option ->
+                        SegmentedButton(
+                            selected = option == selected,
+                            onClick = { onSelect(option) },
+                            shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                            icon = {},
+                        ) { Text(label(option), maxLines = 1) }
+                    }
+                }
+                description?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/** 100 → "1×", 150 → "1.5×" */
+fun speedLabel(percent: Int): String = if (percent % 100 == 0) "${percent / 100}×" else "${percent / 100.0}×"
+
+@Composable
+private fun SettingsPage(
+    settings: Settings,
+    onVolumeChanged: () -> Unit,
+    onSpeedChanged: () -> Unit,
+    onShowLicenses: () -> Unit,
+    onBack: () -> Unit,
+) {
     var soundEnabled by remember { mutableStateOf(settings.soundEnabled) }
     var pcmVolume by remember { mutableStateOf(settings.pcmVolume) }
     var midiVolume by remember { mutableStateOf(settings.midiVolume) }
@@ -239,7 +336,36 @@ private fun SettingsPage(settings: Settings, onVolumeChanged: () -> Unit, onShow
                 },
             )
 
+            CategoryHeader(stringResource(R.string.settings_keypad_header))
+            ChoiceItem(
+                title = stringResource(R.string.settings_keypad_layout),
+                description = stringResource(R.string.settings_keypad_layout_footer),
+                options = KeypadLayout.entries,
+                selected = settings.keypadLayout,
+                label = { stringResource(it.labelRes) },
+                onSelect = { settings.keypadLayout = it },
+            )
+            ChoiceItem(
+                title = stringResource(R.string.settings_keypad_size),
+                description = null,
+                options = KeypadSize.entries,
+                selected = settings.keypadSize,
+                label = { stringResource(it.labelRes) },
+                onSelect = { settings.keypadSize = it },
+            )
+
             CategoryHeader(stringResource(R.string.settings_performance_header))
+            ChoiceItem(
+                title = stringResource(R.string.settings_game_speed),
+                description = stringResource(R.string.settings_game_speed_footer),
+                options = GAME_SPEEDS,
+                selected = settings.gameSpeed,
+                label = { speedLabel(it) },
+                onSelect = {
+                    settings.gameSpeed = it
+                    onSpeedChanged()
+                },
+            )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_show_performance)) },
                 supportingContent = { Text(stringResource(R.string.settings_show_performance_footer)) },

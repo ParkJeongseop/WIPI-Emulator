@@ -12,6 +12,17 @@ enum SettingsKey {
     static let pcmVolume = "pcmVolume"
     static let midiVolume = "midiVolume"
     static let showPerformance = "showPerformance"
+    static let keypadLayout = "keypadLayout"
+    static let keypadSize = "keypadSize"
+    static let gameSpeed = "gameSpeed"
+}
+
+/// 고를 수 있는 게임 속도 (퍼센트)
+let gameSpeeds = [50, 100, 150, 200, 300]
+
+/// 100 → "1×", 150 → "1.5×"
+func speedLabel(_ percent: Int) -> String {
+    percent % 100 == 0 ? "\(percent / 100)×" : "\(Double(percent) / 100)×"
 }
 
 struct SettingsView: View {
@@ -22,6 +33,9 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.pcmVolume) private var pcmVolume = 1.0
     @AppStorage(SettingsKey.midiVolume) private var midiVolume = 1.0
     @AppStorage(SettingsKey.showPerformance) private var showPerformance = false
+    @AppStorage(SettingsKey.keypadLayout) private var keypadLayout = KeypadLayout.phone
+    @AppStorage(SettingsKey.keypadSize) private var keypadSize = KeypadSize.normal
+    @AppStorage(SettingsKey.gameSpeed) private var gameSpeed = 100
 
     @Environment(\.dismiss) private var dismiss
 
@@ -68,9 +82,30 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("settings_show_performance", isOn: $showPerformance)
+                    Picker("settings_keypad_layout", selection: $keypadLayout) {
+                        ForEach(KeypadLayout.allCases) { Text($0.label).tag($0) }
+                    }
+                    Picker("settings_keypad_size", selection: $keypadSize) {
+                        ForEach(KeypadSize.allCases) { Text($0.label).tag($0) }
+                    }
+                } header: {
+                    Text("settings_keypad_header")
+                } footer: {
+                    Text("settings_keypad_layout_footer")
+                }
+
+                Section {
+                    Picker("settings_game_speed", selection: $gameSpeed) {
+                        ForEach(gameSpeeds, id: \.self) { Text(verbatim: speedLabel($0)).tag($0) }
+                    }
                 } header: {
                     Text("settings_performance_header")
+                } footer: {
+                    Text("settings_game_speed_footer")
+                }
+
+                Section {
+                    Toggle("settings_show_performance", isOn: $showPerformance)
                 } footer: {
                     Text("settings_show_performance_footer")
                 }
