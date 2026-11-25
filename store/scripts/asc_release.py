@@ -5,13 +5,15 @@ Steps (each idempotent, run in order):
   status                 show versions/builds for the app
   prepare  <ver> <build> wait for the uploaded build, mark usesNonExemptEncryption=false,
                          create/select App Store version <ver>, attach the build, set What's New
+  attach   <ver> <file>  upload <file> as the version's review attachment (one allowed; a new
+                         version does not inherit the previous one's) and wait for COMPLETE
   submit   <ver>         create a review submission for the version and submit it
 
 Upload the IPA first with:
   xcrun altool --upload-app -f <ipa> -t ios --apiKey HC4VSSZNW8 --apiIssuer <issuer>
 Key: ~/.appstoreconnect/private_keys/AuthKey_HC4VSSZNW8.p8 (never printed or committed).
 """
-import json, sys, time, urllib.request, urllib.error, pathlib
+import hashlib, json, sys, time, urllib.request, urllib.error, pathlib
 import jwt
 
 KEY_ID = "HC4VSSZNW8"
@@ -87,6 +89,33 @@ def prepare(ver, build_no):
     print("review notes present:", bool(detail and detail["attributes"].get("notes")), "(kept as-is; contains the GAME/SOFTWARE INDEX section)")
 
 
+def attach(ver, path):
+    version = api("GET", f"/apps/{APP_ID}/appStoreVersions?filter[versionString]={ver}")["data"][0]
+    detail = api("GET", f"/appStoreVersions/{version['id']}/appStoreReviewDetail")["data"]
+    existing = api("GET", f"/appStoreReviewDetails/{detail['id']}/appStoreReviewAttachments")["data"]
+    for a in existing:
+        print("already attached:", a["attributes"]["fileName"], a["attributes"]["assetDeliveryState"]["state"])
+    if existing:
+        return
+    data = pathlib.Path(path).read_bytes()
+    att = api("POST", "/appStoreReviewAttachments", {"data": {"type": "appStoreReviewAttachments",
+                                                              "attributes": {"fileName": pathlib.Path(path).name, "fileSize": len(data)},
+                                                              "relationships": {"appStoreReviewDetail": {"data": {"type": "appStoreReviewDetails", "id": detail["id"]}}}}})["data"]
+    for op in att["attributes"]["uploadOperations"]:
+        req = urllib.request.Request(op["url"], method=op["method"], data=data[op["offset"]:op["offset"] + op["length"]],
+                                     headers={h["name"]: h["value"] for h in op["requestHeaders"]})
+        urllib.request.urlopen(req).read()
+    api("PATCH", f"/appStoreReviewAttachments/{att['id']}", {"data": {"type": "appStoreReviewAttachments", "id": att["id"],
+                                                                      "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(data).hexdigest()}}})
+    for _ in range(30):
+        state = api("GET", f"/appStoreReviewAttachments/{att['id']}")["data"]["attributes"]["assetDeliveryState"]["state"]
+        print("attachment", pathlib.Path(path).name, state)
+        if state == "COMPLETE":
+            return
+        time.sleep(5)
+    raise SystemExit("attachment never became COMPLETE")
+
+
 def submit(ver):
     version = api("GET", f"/apps/{APP_ID}/appStoreVersions?filter[versionString]={ver}")["data"][0]
     sub = api("POST", "/reviewSubmissions", {"data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
@@ -100,4 +129,4 @@ def submit(ver):
 
 if __name__ == "__main__":
     cmd = sys.argv[1:] or ["status"]
-    {"status": lambda: status(), "prepare": lambda: prepare(cmd[1], cmd[2]), "submit": lambda: submit(cmd[1])}[cmd[0]]()
+    {"status": lambda: status(), "prepare": lambda: prepare(cmd[1], cmd[2]), "attach": lambda: attach(cmd[1], cmd[2]), "submit": lambda: submit(cmd[1])}[cmd[0]]()
