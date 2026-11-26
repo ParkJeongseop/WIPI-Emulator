@@ -8,6 +8,7 @@ pub mod session;
 use std::collections::BTreeMap;
 
 use wie_backend::{Emulator, Options, Platform, extract_zip};
+use wie_core_arm_portable::PortableExecutor;
 use wie_j2me::J2MEEmulator;
 use wie_ktf::KtfEmulator;
 use wie_lgt::LgtEmulator;
@@ -199,10 +200,15 @@ mod tests {
 /// Creates the right emulator for the given file, mirroring the
 /// format-detection branch in wie_cli / wie_web.
 pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8]) -> anyhow::Result<Box<dyn Emulator>> {
-    // No AOT executor: iOS forbids generating code at run time, so both platforms interpret.
+    // iOS forbids generating code at run time, so both platforms run ARM code through the portable executor:
+    // the title is translated once into pre-decoded steps. It counts instructions like the stepping interpreter,
+    // so thread scheduling (and every frame under WIE_VCLOCK) is the same; `WIE_AOT=off` selects the interpreter for A/B runs.
     let options = Options {
         enable_gdbserver: false,
-        aot: None,
+        aot: match std::env::var("WIE_AOT").as_deref() {
+            Ok("off") => None,
+            _ => Some(Box::new(PortableExecutor::new())),
+        },
         profile: None,
     };
 

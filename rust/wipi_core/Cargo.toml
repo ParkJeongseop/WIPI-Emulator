@@ -17,3 +17,4 @@ wie_lgt = { workspace = true }
 wie_skt = { workspace = true }
 wie_j2me = { workspace = true }
 wie_util = { workspace = true }
+wie_core_arm_portable = { workspace = true }
