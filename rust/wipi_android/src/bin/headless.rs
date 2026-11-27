@@ -204,7 +204,12 @@ fn run() -> anyhow::Result<()> {
     if std::env::var("WIE_SESSION").is_ok_and(|v| v != "0" && !v.is_empty()) {
         return run_session(game_path, data_dir, max_seconds, if key_spec == "none" { "" } else { key_spec });
     }
-    let platform = Arc::new(MobilePlatform::new(data_dir, 240, 320, None));
+    // WIE_SCREEN=176x220 runs the title on a screen of another size.
+    let (width, height) = std::env::var("WIE_SCREEN")
+        .ok()
+        .and_then(|x| x.split_once('x').and_then(|(w, h)| Some((w.parse().ok()?, h.parse().ok()?))))
+        .unwrap_or((240, 320));
+    let platform = Arc::new(MobilePlatform::new(data_dir, width, height, None));
 
     // WIE_VCLOCK=1: 가상 시계(호출마다 1ms 전진) — 실행 간 결정성 확보 (flaky 조사용).
     // 루프 종료/키 주입/프레임 저장도 가상 시간 기준으로 동작한다.
