@@ -19,7 +19,7 @@
     <string name="delete_game_title">Delete game</string>
     <string name="delete_game_message">Delete \"%1$s\"? Its save data will also be deleted.</string>
     <string name="screen_size_auto">Screen size: Auto</string>
-    <string name="screen_size_declared">Screen size: Original (%1$d×%2$d)</string>
+    <string name="screen_size_declared">Screen size: %1$d×%2$d</string>
     <string name="screen_size_frame">Screen size: 240×320</string>
     <string name="error_start_failed">Couldn\'t start the game. Please try again.</string>
     <string name="error_load_failed">Couldn\'t load the game — it may be unsupported or the file may be corrupted.

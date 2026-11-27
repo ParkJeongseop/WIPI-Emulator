@@ -18,7 +18,7 @@
 "delete_game_message" = "Delete \"%@\"? Its save data will also be deleted.";
 "screen_size" = "Screen size";
 "screen_size_auto" = "Screen size: Auto";
-"screen_size_declared" = "Screen size: Original (%1$d×%2$d)";
+"screen_size_declared" = "Screen size: %1$d×%2$d";
 "screen_size_frame" = "Screen size: 240×320";
 "error_start_failed" = "Couldn't start the game. Please try again.";
 "error_load_failed" = "Couldn't load the game — it may be unsupported or the file may be corrupted.\n(%@)";
