@@ -133,21 +133,33 @@ pub fn normalize_archive(files: BTreeMap<String, Vec<u8>>) -> BTreeMap<String, V
     strip_handset_files(normalize_layout(files))
 }
 
-/// `(KTF pid, 경로)`: 아카이브를 뜬 단말에서 딸려온, 게임의 일부가 아닌 파일. 새로 설치한 단말에는 없었고 다른
+/// `(KTF·LGT pid, 경로)`: 아카이브를 뜬 단말에서 딸려온, 게임의 일부가 아닌 파일. 새로 설치한 단말에는 없었고 다른
 /// 단말에서는 쓸 수도 없는 것들이라 올리지 않는다. 라이브러리 `manifest.tsv`의 `strip` 열과 같은 목록.
 ///
 /// 티어즈오브메탈(PD004584) `P/res/save.sav`·`savem.sav`: 단말 메모리의 세이브 구조체 덤프라 힙 포인터가 그대로
 /// 들어 있고, 타이틀이 192바이트를 구조체로 읽은 뒤 그 안의 포인터를 따라가 그 단말 밖에서는 어디서든 fault.
 ///
 /// 삼국쟁패2(PD005126) `P/sj2_save.bin`: 뜬 사람의 전화번호로 묶인 암호화 세이브. 읽자마자 타이틀이 종료한다.
+///
+/// 게임빌2010프로야구(LGT PD135777) `P/game_*.sav`·`P/audio.adt`: 첫 실행 때 만들어진, 뜬 사람의 전화번호가
+/// 들어 있는 세이브와 인증 기록. 세이브는 시작하면서 번호를 대조해 "치명적 오류" 상태로 들어가 아무것도 그리지
+/// 않고, 인증 기록은 "인증에 실패하였습니다" 뒤 종료한다. 없으면 새로 설치한 단말처럼 첫 실행 절차로 진행한다.
 const HANDSET_FILES: &[(&str, &str)] = &[
     ("PD004584", "P/res/save.sav"),
     ("PD004584", "P/res/savem.sav"),
     ("PD005126", "P/sj2_save.bin"),
+    ("PD135777", "P/audio.adt"),
+    ("PD135777", "P/game_br.sav"),
+    ("PD135777", "P/game_nr.sav"),
+    ("PD135777", "P/game_o.sav"),
+    ("PD135777", "P/game_pr.sav"),
+    ("PD135777", "P/game_rg.sav"),
+    ("PD135777", "P/game_s.sav"),
+    ("PD135777", "P/game_vs.sav"),
 ];
 
 fn strip_handset_files(mut files: BTreeMap<String, Vec<u8>>) -> BTreeMap<String, Vec<u8>> {
-    if let Some(pid) = KtfEmulator::archive_id(&files) {
+    if let Some(pid) = KtfEmulator::archive_id(&files).or_else(|| LgtEmulator::archive_id(&files)) {
         for (_, path) in HANDSET_FILES.iter().filter(|(p, _)| *p == pid) {
             if files.remove(*path).is_some() {
                 tracing::info!("dropping {path}: carried over from the archive's handset");
@@ -212,6 +224,20 @@ mod tests {
         let files = normalize_archive(files);
         assert!(!files.contains_key("P/res/save.sav"));
         assert!(files.contains_key("P/res/data.bin"));
+
+        let files: BTreeMap<String, Vec<u8>> = [
+            ("app_info", b"PID:PD135777\nAID:0002C663\nMClass:Clet\n".to_vec()),
+            ("0002C663.jar", b"j".to_vec()),
+            ("P/game_o.sav", b"s".to_vec()),
+            ("P/speed.dat", b"d".to_vec()),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_owned(), v))
+        .collect();
+
+        let files = normalize_archive(files);
+        assert!(!files.contains_key("P/game_o.sav"));
+        assert!(files.contains_key("P/speed.dat"));
     }
 
     #[test]
