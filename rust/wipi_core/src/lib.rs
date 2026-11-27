@@ -20,11 +20,11 @@ pub const SCREEN_HEIGHT: u32 = 320;
 /// 게임을 어느 크기의 화면에서 돌릴지 — 호스트가 게임별로 정하는 설정.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ScreenMode {
-    /// 작은 화면에서만 제대로 나오는 것으로 확인된 타이틀([`DECLARED_SCREEN_TITLES`], [`SKVM_SMALL_SCREEN_TITLES`])은
+    /// 작은 화면에서만 제대로 나오는 것으로 확인된 타이틀([`DECLARED_SCREEN_TITLES`], [`SKVM_SCREEN_TITLES`])은
     /// 그 크기, 나머지는 프레임 크기.
     #[default]
     Auto,
-    /// 패키지가 선언한 크기(SK-VM은 176폭 단말 크기). 프레임에는 비율을 유지해 맞춰 보여준다.
+    /// 패키지가 선언한 크기(SK-VM은 확인된 크기, 없으면 176폭 단말 크기). 프레임에는 비율을 유지해 맞춰 보여준다.
     Declared,
     /// 프레임 크기(240×320).
     Frame,
@@ -60,25 +60,75 @@ const DECLARED_SCREEN_TITLES: &[&str] = &[
     "PD004707", "PD004868", "PD005307", "PD005381", "PD005453", "PD005704", "PD006449",
 ];
 
-/// SK-VM 176폭 단말의 캔버스 크기.
+/// 목록에 없는 SK-VM 패키지를 작은 화면으로 돌릴 때의 크기 — 176폭 단말의 표시 영역.
 ///
-/// SK-VM 패키지(`.msd`)에는 화면 크기 선언이 없다. 176폭 단말용으로 받은 jar는 그 단말의 리소스만 담고 있어
-/// 240×320에서는 없는 리소스를 찾거나 화면 한쪽에만 그린다. 높이 178은 타이틀에서 확인했다 — 프리스톤테일은 정확히
-/// 178줄을 그리고, 레스토랑타이쿤2006은 캔버스 높이로 리소스 폴더를 고르는데 196 이하여야 176용을 고른다.
-const SKVM_SMALL_SCREEN: (u32, u32) = (176, 178);
+/// SK-VM 패키지(`.msd`)에는 화면 크기 선언이 없다. 작은 단말용으로 받은 jar는 그 단말의 리소스만 담고 있어
+/// 240×320에서는 없는 리소스를 찾거나 화면 한쪽에만 그린다. SK-VM의 캔버스는 표시 영역보다 16줄 짧으므로
+/// (wie의 `wie.midp.softkeyBand`) 여기 높이 204는 `Canvas.getHeight()` 188에 해당한다.
+///
+/// 높이는 타이틀에서 확인했다 — 176폭 jar의 전체 화면 그림이 176×202~204이고, 엑스맨은 194에서 아랫줄이 잘리며,
+/// 신시티는 220에서 아래 표시줄 밑이 비고, 레스토랑타이쿤2006은 212를 넘으면 없는 `/img_240/` 리소스를 찾는다.
+const SKVM_SMALL_SCREEN: (u32, u32) = (176, 204);
 
-/// [`SKVM_SMALL_SCREEN`]에서 돌려야 제대로 나오는 SK-VM 타이틀의 id(`DD-ProgName`, 없으면 `.msd` 파일 이름).
+/// 작은 화면에서 돌려야 제대로 나오는 SK-VM 타이틀의 id(`DD-ProgName`, 없으면 `.msd` 파일 이름)와 그 화면 크기.
 ///
-/// SK-VM 90종을 두 크기로 모두 돌려 본 결과다. 대부분은 240×320을 채우거나 가운데에 그리고, 240폭 빌드는
-/// 작은 화면에서 잘리므로(스페셜포스, 영웅서기, 어스토니시아ep3 등) 여기 있는 것만 작은 화면으로 돌린다.
+/// SK-VM 90종을 240×320, 176×194/204/208/220, 128×160으로 모두 돌려 본 결과다. 나머지는 240×320을 채우거나
+/// 240폭 빌드라 작은 화면에서 잘리므로(스페셜포스, 영웅서기, 어스토니시아ep3 등) 여기 있는 것만 작은 화면으로 돌린다.
 ///
-/// 240×320에서 깨지는 것: 레스토랑타이쿤2006(0052039193, `/img_240/` 리소스가 없어 메뉴가 비어 있음),
-/// 로맨스소드(0050378735, 240용 로고가 없어 검은 화면), 나이트메이커(0050092169, 위아래에 깨진 그림).
+/// 128×160 — 240×320에서는 가운데나 왼쪽 위에 작게 그리거나 배치가 깨진다: 교실이데아(0000000012),
+/// 디지몬RPG II(0052634065), 삼국지연의(0027587116), 테일즈판타지(3528040101), 메이플스토리 궁수·법사·전사편
+/// (0047652547, 3519630000, 0000000064), 테일즈 오브 히어로즈(0021471486), 2006독일축구(0053688813),
+/// 고래사냥2(3523930101), MBC무한도전(9000000008), STRIKERS1999(0050608430), 매지컬프린세스(0048926642),
+/// 미니게임츄리닝(0050664330), 미니동화TING(0054927090), 미니스포츠클럽(0054401421), 사고뭉치트윈즈(0054532850),
+/// 센티멘탈러브+(0054448880).
 ///
-/// 돌기는 하지만 한쪽에만 그리는 것: 얼라이브(0174585654, 왼쪽 176열), 프리스톤테일(3500406052, 위쪽 178줄).
-const SKVM_SMALL_SCREEN_TITLES: &[&str] = &["0050092169", "0050378735", "0052039193", "0174585654", "3500406052"];
+/// 176×204 — 240×320에서 깨지는 것: 레스토랑타이쿤2006(0052039193, 메뉴가 비어 있음), 로맨스소드(0050378735,
+/// 240용 로고가 없어 검은 화면), 나이트메이커(0050092169, 위아래에 깨진 그림), 물가에돌튕기기IQ(0053630031),
+/// 신시티(0050978830). 돌기는 하지만 176폭 창에만 그리는 것: 얼라이브(0174585654), 카오스블레이드(0027571859),
+/// 다크슬레이어2(0049884301), 대해적시대(0055719339), 엑스맨(0053594173), 크리스탈보더(0054300745).
+///
+/// 176×178 — 프리스톤테일(3500406052)은 위쪽 178줄만 그린다.
+const SKVM_SCREEN_TITLES: &[(&str, (u32, u32))] = &[
+    ("0000000012", (128, 160)),
+    ("0000000064", (128, 160)),
+    ("0021471486", (128, 160)),
+    ("0027571859", SKVM_SMALL_SCREEN),
+    ("0027587116", (128, 160)),
+    ("0047652547", (128, 160)),
+    ("0048926642", (128, 160)),
+    ("0049884301", SKVM_SMALL_SCREEN),
+    ("0050092169", SKVM_SMALL_SCREEN),
+    ("0050378735", SKVM_SMALL_SCREEN),
+    ("0050608430", (128, 160)),
+    ("0050664330", (128, 160)),
+    ("0050978830", SKVM_SMALL_SCREEN),
+    ("0052039193", SKVM_SMALL_SCREEN),
+    ("0052634065", (128, 160)),
+    ("0053594173", SKVM_SMALL_SCREEN),
+    ("0053630031", SKVM_SMALL_SCREEN),
+    ("0053688813", (128, 160)),
+    ("0054300745", SKVM_SMALL_SCREEN),
+    ("0054401421", (128, 160)),
+    ("0054448880", (128, 160)),
+    ("0054532850", (128, 160)),
+    ("0054927090", (128, 160)),
+    ("0055719339", SKVM_SMALL_SCREEN),
+    ("0174585654", SKVM_SMALL_SCREEN),
+    ("3500406052", (176, 178)),
+    ("3519630000", (128, 160)),
+    ("3523930101", (128, 160)),
+    ("3528040101", (128, 160)),
+    ("9000000008", (128, 160)),
+];
 
-/// 프레임(240×320) 말고 이 패키지를 돌릴 수 있는 화면 크기 — KTF는 패키지가 선언한 크기, SK-VM은 176폭 단말 크기.
+/// 이 SK-VM 패키지가 [`SKVM_SCREEN_TITLES`]에 있으면 그 화면 크기.
+fn skvm_listed_screen(files: &BTreeMap<String, Vec<u8>>) -> Option<(u32, u32)> {
+    let id = SktEmulator::archive_id(files)?;
+    SKVM_SCREEN_TITLES.iter().find(|(listed, _)| *listed == id).map(|(_, size)| *size)
+}
+
+/// 프레임(240×320) 말고 이 패키지를 돌릴 수 있는 화면 크기 — KTF는 패키지가 선언한 크기, SK-VM은 확인된 타이틀이면
+/// 그 크기이고 아니면 176폭 단말 크기.
 /// 호스트는 이 값이 있을 때만 화면 크기 설정을 보여준다.
 pub fn declared_screen(buf: &[u8]) -> Option<(u32, u32)> {
     declared_screen_of(&normalize_archive(extract_zip(buf).ok()?))
@@ -87,7 +137,8 @@ pub fn declared_screen(buf: &[u8]) -> Option<(u32, u32)> {
 fn declared_screen_of(files: &BTreeMap<String, Vec<u8>>) -> Option<(u32, u32)> {
     // `create_emulator`와 같은 순서로 판별한다
     if !KtfEmulator::loadable_archive(files) {
-        return (!LgtEmulator::loadable_archive(files) && SktEmulator::loadable_archive(files)).then_some(SKVM_SMALL_SCREEN);
+        return (!LgtEmulator::loadable_archive(files) && SktEmulator::loadable_archive(files))
+            .then(|| skvm_listed_screen(files).unwrap_or(SKVM_SMALL_SCREEN));
     }
     let value = adf_field(files.get("__adf__")?, b"DisplaySize:")?;
     let value = std::str::from_utf8(&value).ok()?.trim();
@@ -104,7 +155,7 @@ fn runs_at_declared_screen(files: &BTreeMap<String, Vec<u8>>, screen_mode: Scree
             let listed = if KtfEmulator::loadable_archive(files) {
                 KtfEmulator::archive_id(files).is_some_and(|pid| DECLARED_SCREEN_TITLES.contains(&pid.as_str()))
             } else {
-                SktEmulator::archive_id(files).is_some_and(|id| SKVM_SMALL_SCREEN_TITLES.contains(&id.as_str()))
+                skvm_listed_screen(files).is_some()
             };
             listed && declared_screen_of(files).is_some()
         }
@@ -324,7 +375,7 @@ mod tests {
         assert_eq!(declared_screen_of(&archive("PD004541", "240*320")), None);
         assert!(!runs_at_declared_screen(&archive("PD004541", "240*320"), ScreenMode::Auto));
 
-        // SK-VM은 선언이 없다: 어느 패키지든 작은 화면을 고를 수 있고, 자동으로는 확인된 타이틀만
+        // SK-VM은 선언이 없다: 어느 패키지든 작은 화면을 고를 수 있고, 자동으로는 확인된 타이틀만 그 타이틀의 크기로
         let skvm = |id: &str| -> BTreeMap<String, Vec<u8>> {
             [
                 (format!("{id}.msd"), b"MIDlet-1: a,,A\r\n".to_vec()),
@@ -334,11 +385,15 @@ mod tests {
             .collect()
         };
 
-        assert_eq!(declared_screen_of(&skvm("0052039193")), Some((176, 178)));
+        assert_eq!(declared_screen_of(&skvm("0052039193")), Some((176, 204)));
         assert!(runs_at_declared_screen(&skvm("0052039193"), ScreenMode::Auto));
         assert!(!runs_at_declared_screen(&skvm("0052039193"), ScreenMode::Frame));
 
-        assert_eq!(declared_screen_of(&skvm("0000000001")), Some((176, 178)));
+        // 확인된 타이틀은 저마다의 크기
+        assert_eq!(declared_screen_of(&skvm("0053688813")), Some((128, 160)));
+        assert!(runs_at_declared_screen(&skvm("0053688813"), ScreenMode::Declared));
+
+        assert_eq!(declared_screen_of(&skvm("0000000001")), Some((176, 204)));
         assert!(!runs_at_declared_screen(&skvm("0000000001"), ScreenMode::Auto));
         assert!(runs_at_declared_screen(&skvm("0000000001"), ScreenMode::Declared));
     }
@@ -396,7 +451,8 @@ pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8], 
             // SK-VM 패키지는 화면 크기를 선언하지 않고 로더도 요청하지 않는다. 작은 화면으로 돌릴 때는 여기서 정한다.
             let platform: Box<dyn Platform> = if runs_at_declared_screen(&files, screen_mode) {
                 let platform = platform::LcdPlatform::new(platform);
-                platform.screen().resize(SKVM_SMALL_SCREEN.0, SKVM_SMALL_SCREEN.1)?;
+                let (width, height) = declared_screen_of(&files).unwrap_or(SKVM_SMALL_SCREEN);
+                platform.screen().resize(width, height)?;
                 Box::new(platform)
             } else {
                 platform
