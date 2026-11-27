@@ -55,6 +55,21 @@ struct LibraryView: View {
                     GameCell(game: game)
                         .onTapGesture { onPlay(game) }
                         .contextMenu {
+                            // 240×320이 아닌 화면을 선언한 게임만: 화면 크기 설정
+                            if game.declaredScreen != 0 {
+                                Picker("screen_size", selection: Binding(
+                                    get: { game.screenMode },
+                                    set: { library.setScreenMode(game, $0) }
+                                )) {
+                                    Text("screen_size_auto").tag(0)
+                                    Text(verbatim: String(
+                                        format: NSLocalizedString("screen_size_declared", comment: ""),
+                                        Int(game.declaredScreen >> 16), Int(game.declaredScreen & 0xffff)
+                                    )).tag(1)
+                                    Text("screen_size_frame").tag(2)
+                                }
+                                .pickerStyle(.inline)
+                            }
                             Button(role: .destructive) {
                                 library.delete(game)
                             } label: {

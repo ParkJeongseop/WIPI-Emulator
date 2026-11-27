@@ -15,7 +15,10 @@ use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 use wie_backend::{Event, KeyCode};
 
-use wipi_core::platform::{CapturedFrame, MobilePlatform, SharedPlatform};
+use wipi_core::{
+    ScreenMode,
+    platform::{CapturedFrame, MobilePlatform, SharedPlatform},
+};
 
 /// 진행성(T2/T3) 검증용 기본 키 시나리오 ("초:키" 목록, 키는 300ms 후 up)
 /// 타이틀 통과(OK×2) → 메뉴 이동(DOWN) → 선택(OK) → 게임 내 입력(5)
@@ -104,6 +107,15 @@ fn main() -> anyhow::Result<()> {
         .map_err(|_| anyhow::anyhow!("headless thread panicked"))?
 }
 
+/// WIE_SCREEN_MODE=declared|frame: the per-game screen size setting of the app. Unset is the app's default (automatic).
+fn screen_mode() -> ScreenMode {
+    match std::env::var("WIE_SCREEN_MODE").as_deref() {
+        Ok("declared") => ScreenMode::Declared,
+        Ok("frame") => ScreenMode::Frame,
+        _ => ScreenMode::Auto,
+    }
+}
+
 /// Runs the title on the app's session loop and prints the frame rate and emulator load once a second.
 fn run_session(game_path: &str, data_dir: PathBuf, max_seconds: u64, key_spec: &str) -> anyhow::Result<()> {
     use std::time::{Duration, Instant};
@@ -120,7 +132,7 @@ fn run_session(game_path: &str, data_dir: PathBuf, max_seconds: u64, key_spec: &
     }
     keys.sort_by_key(|x| x.0);
 
-    session::start(game_path.to_owned(), fs::read(game_path)?, data_dir, None)?;
+    session::start(game_path.to_owned(), fs::read(game_path)?, data_dir, None, screen_mode())?;
 
     // WIE_SPEED=<퍼센트>: 게임 속도 배율
     if let Some(speed) = std::env::var("WIE_SPEED").ok().and_then(|x| x.parse().ok()) {
@@ -221,7 +233,7 @@ fn run() -> anyhow::Result<()> {
     }
 
     let buf = fs::read(game_path)?;
-    let mut emulator = wipi_core::create_emulator(Box::new(SharedPlatform(platform.clone())), game_path, &buf)?;
+    let mut emulator = wipi_core::create_emulator(Box::new(SharedPlatform(platform.clone())), game_path, &buf, screen_mode())?;
 
     let start = std::time::Instant::now();
     let elapsed_ms = {

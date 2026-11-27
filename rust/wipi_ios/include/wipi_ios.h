@@ -20,11 +20,14 @@ extern "C" {
 void wipi_init(void);
 
 // Loads a game (.zip/.jar bytes) and starts the emulator thread.
-// soundfont_path may be "" for silent MIDI. Returns false on failure
-// (check wipi_get_error). Fails if a session is already running.
+// soundfont_path may be "" for silent MIDI. screen_mode is the per-game
+// screen size setting: 0 = automatic (the declared size for titles known to
+// need it), 1 = the size the package declares, 2 = the 240x320 frame.
+// Returns false on failure (check wipi_get_error). Fails if a session is
+// already running.
 bool wipi_start(const uint8_t *game_data, size_t game_data_len,
                const char *filename, const char *data_dir,
-               const char *soundfont_path);
+               const char *soundfont_path, uint32_t screen_mode);
 
 // Copies the latest frame as RGBA8888 (row-major, WIDTH*HEIGHT*4 bytes).
 // Returns true when a new frame was written since the last call.
@@ -108,6 +111,11 @@ size_t wipi_game_icon(const uint8_t *game_data, size_t game_data_len, uint8_t *o
 // Returns the actual length; 0 means no name or buffer too small.
 // The host must decode EUC-KR (CP949).
 size_t wipi_game_name(const uint8_t *game_data, size_t game_data_len, uint8_t *out, size_t out_cap);
+
+// The screen size a game package declares, as (width << 16) | height. 0 when
+// it declares none or the 240x320 frame: only offer the screen size setting
+// when this is non-zero.
+uint32_t wipi_game_screen(const uint8_t *game_data, size_t game_data_len);
 
 #ifdef __cplusplus
 }

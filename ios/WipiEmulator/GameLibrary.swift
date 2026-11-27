@@ -11,6 +11,8 @@ struct GameEntry: Identifiable {
     let gameData: Data
     let filename: String // 포맷 감지용 원본 파일명(.zip/.jar 확장자 유지)
     let dataDir: URL // 게임별 세이브 경로 (games/<id>/data) — 삭제 시 함께 제거됨
+    let screenMode: Int // 화면 크기 설정: 0=자동, 1=선언 크기, 2=240×320 (WipiCore.start와 같은 값)
+    let declaredScreen: UInt32 // 게임이 선언한 화면 크기 ((너비 << 16) | 높이), 240×320이거나 없으면 0
 }
 
 @MainActor
@@ -35,13 +37,28 @@ final class GameLibrary: ObservableObject {
 
     private func load(_ dir: URL) -> GameEntry? {
         guard dir.hasDirectoryPath,
-              let meta = try? JSONDecoder().decode(Meta.self, from: Data(contentsOf: dir.appendingPathComponent("meta.json"))),
+              var meta = try? JSONDecoder().decode(Meta.self, from: Data(contentsOf: dir.appendingPathComponent("meta.json"))),
               let gameData = try? Data(contentsOf: dir.appendingPathComponent(meta.filename))
         else { return nil }
 
+        // 이 항목이 생기기 전에 임포트한 게임: 패키지를 한 번 읽어 적어 둔다
+        if meta.declaredScreen == nil {
+            meta.declaredScreen = WipiCore.declaredScreen(gameData: gameData)
+            try? JSONEncoder().encode(meta).write(to: dir.appendingPathComponent("meta.json"))
+        }
+
         let cover = (try? Data(contentsOf: dir.appendingPathComponent("cover.png"))).flatMap(UIImage.init(data:))
         let dataDir = dir.appendingPathComponent("data", isDirectory: true)
-        return GameEntry(id: dir.lastPathComponent, name: meta.name, cover: cover, gameData: gameData, filename: meta.filename, dataDir: dataDir)
+        return GameEntry(
+            id: dir.lastPathComponent,
+            name: meta.name,
+            cover: cover,
+            gameData: gameData,
+            filename: meta.filename,
+            dataDir: dataDir,
+            screenMode: meta.screenMode ?? 0,
+            declaredScreen: meta.declaredScreen ?? 0
+        )
     }
 
     /// 파일을 라이브러리에 임포트 (복사 + 표지/이름 추출·캐시). 성공 시 GameEntry 반환.
@@ -69,13 +86,32 @@ final class GameLibrary: ObservableObject {
         let name = WipiCore.extractNameRaw(gameData: gameData).flatMap(Self.decodeEUCKR)
             ?? (filename as NSString).deletingPathExtension
 
-        let meta = Meta(name: name, filename: filename)
+        let declaredScreen = WipiCore.declaredScreen(gameData: gameData)
+        let meta = Meta(name: name, filename: filename, screenMode: nil, declaredScreen: declaredScreen)
         try JSONEncoder().encode(meta).write(to: dir.appendingPathComponent("meta.json"))
 
         let dataDir = dir.appendingPathComponent("data", isDirectory: true)
-        let entry = GameEntry(id: id, name: name, cover: cover, gameData: gameData, filename: filename, dataDir: dataDir)
+        let entry = GameEntry(
+            id: id,
+            name: name,
+            cover: cover,
+            gameData: gameData,
+            filename: filename,
+            dataDir: dataDir,
+            screenMode: 0,
+            declaredScreen: declaredScreen
+        )
         reload()
         return entry
+    }
+
+    /// 화면 크기 설정을 저장 (meta.json의 다른 항목은 유지)
+    func setScreenMode(_ entry: GameEntry, _ mode: Int) {
+        let metaFile = root.appendingPathComponent(entry.id, isDirectory: true).appendingPathComponent("meta.json")
+        guard var meta = try? JSONDecoder().decode(Meta.self, from: Data(contentsOf: metaFile)) else { return }
+        meta.screenMode = mode
+        try? JSONEncoder().encode(meta).write(to: metaFile)
+        reload()
     }
 
     func delete(_ entry: GameEntry) {
@@ -87,6 +123,8 @@ final class GameLibrary: ObservableObject {
     private struct Meta: Codable {
         let name: String
         let filename: String
+        var screenMode: Int?
+        var declaredScreen: UInt32?
     }
 
     /// EUC-KR(CP949) 바이트 → String. WIPI 패키지의 게임명 인코딩.

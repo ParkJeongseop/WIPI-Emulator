@@ -19,8 +19,11 @@ object WipiNative {
 
     private external fun nativeInit(context: Context)
 
-    /** 게임 로드 및 에뮬레이터 스레드 시작. 성공 시 true. soundfontPath가 빈 문자열이면 MIDI 무음. */
-    external fun nativeStart(gameData: ByteArray, filename: String, dataDir: String, soundfontPath: String): Boolean
+    /**
+     * 게임 로드 및 에뮬레이터 스레드 시작. 성공 시 true. soundfontPath가 빈 문자열이면 MIDI 무음.
+     * screenMode: 0=자동(내장 표의 타이틀만 선언 크기), 1=선언 크기, 2=240×320.
+     */
+    external fun nativeStart(gameData: ByteArray, filename: String, dataDir: String, soundfontPath: String, screenMode: Int): Boolean
 
     /** 최신 프레임을 ARGB int 배열로 복사. 새 프레임이 있었으면 true. */
     external fun nativeGetFrame(out: IntArray): Boolean
@@ -78,6 +81,9 @@ object WipiNative {
 
     /** 게임 패키지에서 표지 아이콘 PNG 추출 (없으면 null) */
     external fun nativeGameIcon(gameData: ByteArray): ByteArray?
+
+    /** 게임이 선언한 화면 크기 ((너비 shl 16) or 높이). 선언이 없거나 240×320이면 0 — 화면 크기 설정을 보일지 판단용. */
+    external fun nativeGameScreen(gameData: ByteArray): Int
 
     /** 게임 패키지에서 게임명 raw 바이트(EUC-KR) 추출 (없으면 null) */
     external fun nativeGameName(gameData: ByteArray): ByteArray?

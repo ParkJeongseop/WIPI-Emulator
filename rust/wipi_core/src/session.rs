@@ -19,6 +19,7 @@ use std::{
 use wie_backend::{Emulator, Event, GuestMemory, KeyCode};
 
 use crate::{
+    ScreenMode,
     cheat::Cheats,
     platform::{CapturedFrame, MobilePlatform, SharedPlatform, VibrationRequest},
 };
@@ -100,6 +101,7 @@ fn emulator_thread(
     platform: Arc<MobilePlatform>,
     filename: String,
     game_data: Vec<u8>,
+    screen_mode: ScreenMode,
     key_rx: Receiver<KeyEvent>,
     cheat_rx: Receiver<CheatJob>,
     stop: Arc<AtomicBool>,
@@ -109,7 +111,7 @@ fn emulator_thread(
 ) {
     raise_thread_priority();
 
-    let mut emulator = match crate::create_emulator(Box::new(SharedPlatform(platform.clone())), &filename, &game_data) {
+    let mut emulator = match crate::create_emulator(Box::new(SharedPlatform(platform.clone())), &filename, &game_data, screen_mode) {
         Ok(x) => x,
         Err(e) => {
             *error.lock().unwrap() = Some(SessionError {
@@ -315,7 +317,13 @@ fn raise_thread_priority() {
 
 /// 게임을 로드하고 에뮬레이터 스레드를 시작한다.
 /// 단일 세션 앱이므로 이전 세션이 남아 있으면(호스트 정리 누락 등) 오류 대신 정리하고 시작한다.
-pub fn start(filename: String, game_data: Vec<u8>, data_dir: PathBuf, soundfont_path: Option<PathBuf>) -> anyhow::Result<()> {
+pub fn start(
+    filename: String,
+    game_data: Vec<u8>,
+    data_dir: PathBuf,
+    soundfont_path: Option<PathBuf>,
+    screen_mode: ScreenMode,
+) -> anyhow::Result<()> {
     let mut session = SESSION.lock().unwrap();
     if let Some(mut stale) = session.take() {
         tracing::warn!("session already running - stopping stale session before start");
@@ -338,7 +346,7 @@ pub fn start(filename: String, game_data: Vec<u8>, data_dir: PathBuf, soundfont_
         std::thread::Builder::new()
             .name("wie-emulator".into())
             .stack_size(16 * 1024 * 1024)
-            .spawn(move || emulator_thread(platform, filename, game_data, key_rx, cheat_rx, stop, paused, load, error))?
+            .spawn(move || emulator_thread(platform, filename, game_data, screen_mode, key_rx, cheat_rx, stop, paused, load, error))?
     };
 
     *session = Some(Session {

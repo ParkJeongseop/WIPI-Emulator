@@ -37,17 +37,18 @@ struct ContentView: View {
     private func play(_ entry: GameEntry) {
         try? FileManager.default.createDirectory(at: entry.dataDir, withIntermediateDirectories: true)
         runningGameId = entry.id
-        start(gameData: entry.gameData, filename: entry.filename, dataDir: entry.dataDir)
+        start(gameData: entry.gameData, filename: entry.filename, dataDir: entry.dataDir, screenMode: entry.screenMode)
     }
 
-    private func start(gameData: Data, filename: String, dataDir: URL) {
+    private func start(gameData: Data, filename: String, dataDir: URL, screenMode: Int) {
         let soundfontPath = Bundle.main.path(forResource: "GeneralUser-GS", ofType: "sf2") ?? ""
 
         let ok = WipiCore.start(
             gameData: gameData,
             filename: filename,
             dataDir: dataDir.path,
-            soundfontPath: soundfontPath
+            soundfontPath: soundfontPath,
+            screenMode: screenMode
         )
 
         if ok {

@@ -16,6 +16,10 @@
 "import_read_error" = "Couldn't read the file";
 "delete_game_title" = "Delete game";
 "delete_game_message" = "Delete \"%@\"? Its save data will also be deleted.";
+"screen_size" = "Screen size";
+"screen_size_auto" = "Screen size: Auto";
+"screen_size_declared" = "Screen size: Original (%1$d×%2$d)";
+"screen_size_frame" = "Screen size: 240×320";
 "error_start_failed" = "Couldn't start the game. Please try again.";
 "error_load_failed" = "Couldn't load the game — it may be unsupported or the file may be corrupted.\n(%@)";
 "error_runtime" = "An error occurred while running — this game may not be fully supported yet.\n(%@)";

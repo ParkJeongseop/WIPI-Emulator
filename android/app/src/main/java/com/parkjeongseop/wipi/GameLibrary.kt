@@ -20,7 +20,13 @@ data class GameEntry(
     val gameFile: File,
     val filename: String, // 포맷 감지용 원본 파일명(.zip/.jar 확장자 유지)
     val dataDir: File, // 게임별 세이브 경로 (games/<id>/data) — 삭제 시 함께 제거
+    val screenMode: Int, // 화면 크기 설정 (SCREEN_MODE_*)
 )
+
+// 화면 크기 설정 — WipiNative.nativeStart의 screenMode와 같은 값
+const val SCREEN_MODE_AUTO = 0
+const val SCREEN_MODE_DECLARED = 1
+const val SCREEN_MODE_FRAME = 2
 
 class GameLibrary(context: Context) {
     private val root = File(context.filesDir, "games").apply { mkdirs() }
@@ -51,6 +57,7 @@ class GameLibrary(context: Context) {
                 gameFile = gameFile,
                 filename = filename,
                 dataDir = File(dir, "data"),
+                screenMode = meta.optInt("screenMode", SCREEN_MODE_AUTO),
             )
         } catch (e: Exception) {
             null
@@ -74,10 +81,46 @@ class GameLibrary(context: Context) {
             ?: filename.substringBeforeLast('.')
 
         File(dir, "meta.json").writeText(
-            JSONObject().put("name", name).put("filename", filename).toString()
+            JSONObject()
+                .put("name", name)
+                .put("filename", filename)
+                .put("declaredScreen", WipiNative.nativeGameScreen(bytes))
+                .toString()
         )
 
         return load(dir)
+    }
+
+    /** 화면 크기 설정을 저장 (meta.json의 다른 항목은 유지) */
+    fun setScreenMode(entry: GameEntry, mode: Int) = updateMeta(entry) { it.put("screenMode", mode) }
+
+    /**
+     * 게임이 선언한 화면 크기 ((너비 shl 16) or 높이, 240×320이거나 없으면 0).
+     * 이 항목이 생기기 전에 임포트한 게임은 처음 물을 때 패키지를 읽어 meta.json에 적어 둔다.
+     */
+    fun declaredScreen(entry: GameEntry): Int {
+        val meta = readMeta(entry)
+        if (meta != null && meta.has("declaredScreen")) return meta.optInt("declaredScreen")
+
+        val declared = try {
+            WipiNative.nativeGameScreen(entry.gameFile.readBytes())
+        } catch (e: Exception) {
+            return 0
+        }
+        updateMeta(entry) { it.put("declaredScreen", declared) }
+        return declared
+    }
+
+    private fun readMeta(entry: GameEntry): JSONObject? = try {
+        JSONObject(File(File(root, entry.id), "meta.json").readText())
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun updateMeta(entry: GameEntry, change: (JSONObject) -> Unit) {
+        val meta = readMeta(entry) ?: return
+        change(meta)
+        File(File(root, entry.id), "meta.json").writeText(meta.toString())
     }
 
     fun delete(entry: GameEntry) {

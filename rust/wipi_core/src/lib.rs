@@ -17,6 +17,76 @@ use wie_skt::SktEmulator;
 pub const SCREEN_WIDTH: u32 = 240;
 pub const SCREEN_HEIGHT: u32 = 320;
 
+/// 게임을 어느 크기의 화면에서 돌릴지 — 호스트가 게임별로 정하는 설정.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ScreenMode {
+    /// 선언 크기에서만 제대로 나오는 것으로 확인된 타이틀([`DECLARED_SCREEN_TITLES`])은 선언 크기, 나머지는 프레임 크기.
+    #[default]
+    Auto,
+    /// 패키지가 선언한 크기. 프레임에는 비율을 유지해 맞춰 보여준다.
+    Declared,
+    /// 프레임 크기(240×320).
+    Frame,
+}
+
+impl ScreenMode {
+    /// 브리지가 주고받는 값: 0 = 자동, 1 = 선언 크기, 2 = 프레임 크기. 모르는 값은 자동.
+    pub fn from_raw(raw: u32) -> Self {
+        match raw {
+            1 => Self::Declared,
+            2 => Self::Frame,
+            _ => Self::Auto,
+        }
+    }
+}
+
+/// 선언 화면 크기(`DisplaySize`)로 돌려야 제대로 나오는 KTF 타이틀의 pid.
+///
+/// KTF 패키지의 `DisplaySize`는 대개 "이 크기 이상"이라는 뜻이라, 176*220을 선언한 116종 가운데 90여 종은
+/// 240×320을 채우거나 가운데에 그린다. 그래서 선언 크기를 무조건 따르지 않고, 두 크기로 모두 돌려 본 결과
+/// 선언 크기가 나은 것만 여기 둔다. 같은 pid의 큰 화면 빌드(크아bnb2007)는 240*320을 선언하므로 그대로다.
+///
+/// 240×320에서 깨지는 것: 테트리스2006(PD003452, 240×176용 배치를 고름), 크아bnb2007(PD004541, 메뉴에 오프셋을
+/// 두 번 더함), 서울타이쿤2(PD004707, 큰 화면 리소스가 없어 메뉴에서 멈춤), 대물낚시광2(PD001732, 화면이 번짐),
+/// 화산제일검2(PD005381, 큰 화면 타이틀 이미지가 없음).
+///
+/// 240×320에서 돌기는 하지만 왼쪽 위 176×220에만 그리는 것: 카우스블레이드(PD002010), 스도쿠(PD002819),
+/// 동전쌓기2006(PD002917), 도신노홍철맞고(PD003092), 아포칼립스(PD003129), 서든어택(PD004083),
+/// 리얼사커2007(PD005307), 다이하드4(PD005453), 정무문3(PD005704), 맞고삼국대전(PD001074), 피자타이쿤(PD002413),
+/// 셔터-영혼의울림(PD004363), 폴라폴리2007(PD004868), 미궁미술관살인사건(PD006449).
+const DECLARED_SCREEN_TITLES: &[&str] = &[
+    "PD001074", "PD001732", "PD002010", "PD002413", "PD002819", "PD002917", "PD003092", "PD003129", "PD003452", "PD004083", "PD004363", "PD004541",
+    "PD004707", "PD004868", "PD005307", "PD005381", "PD005453", "PD005704", "PD006449",
+];
+
+/// 패키지가 프레임과 다른 화면 크기를 선언했으면 그 크기. 호스트는 이 값이 있을 때만 화면 크기 설정을 보여준다.
+pub fn declared_screen(buf: &[u8]) -> Option<(u32, u32)> {
+    declared_screen_of(&normalize_archive(extract_zip(buf).ok()?))
+}
+
+fn declared_screen_of(files: &BTreeMap<String, Vec<u8>>) -> Option<(u32, u32)> {
+    if !KtfEmulator::loadable_archive(files) {
+        return None;
+    }
+    let value = adf_field(files.get("__adf__")?, b"DisplaySize:")?;
+    let value = std::str::from_utf8(&value).ok()?.trim();
+    let (width, height) = value.split_once(['*', 'x', 'X'])?;
+    let size: (u32, u32) = (width.trim().parse().ok()?, height.trim().parse().ok()?);
+
+    (size.0 > 0 && size.1 > 0 && size != (SCREEN_WIDTH, SCREEN_HEIGHT)).then_some(size)
+}
+
+/// 이 KTF 패키지를 선언 크기의 화면에서 돌릴지.
+fn runs_at_declared_screen(files: &BTreeMap<String, Vec<u8>>, screen_mode: ScreenMode) -> bool {
+    match screen_mode {
+        ScreenMode::Auto => {
+            declared_screen_of(files).is_some() && KtfEmulator::archive_id(files).is_some_and(|pid| DECLARED_SCREEN_TITLES.contains(&pid.as_str()))
+        }
+        ScreenMode::Declared => true,
+        ScreenMode::Frame => false,
+    }
+}
+
 /// 게임 라이브러리 표시용 메타데이터. 콘솔 에뮬과 달리 WIPI 패키지는
 /// 표지 아이콘과 게임명이 zip 안에 동봉돼 있어 외부 DB가 필요 없다.
 pub struct GameMetadata {
@@ -176,6 +246,33 @@ mod tests {
         assert_eq!(normalize_archive(files).len(), 2);
     }
 
+    #[test]
+    fn declared_screen_is_followed_only_for_listed_titles_unless_the_host_says_otherwise() {
+        let archive = |pid: &str, size: &str| -> BTreeMap<String, Vec<u8>> {
+            [
+                ("__adf__", format!("PID:{pid}\r\nAID:01030535\r\nDisplaySize:{size}\r\n").into_bytes()),
+                ("01030535.jar", b"j".to_vec()),
+            ]
+            .into_iter()
+            .map(|(k, v)| (k.to_owned(), v))
+            .collect()
+        };
+
+        let listed = archive("PD002917", "176*220");
+        assert_eq!(declared_screen_of(&listed), Some((176, 220)));
+        assert!(runs_at_declared_screen(&listed, ScreenMode::Auto));
+        assert!(!runs_at_declared_screen(&listed, ScreenMode::Frame));
+
+        let unlisted = archive("PD000001", "176*220");
+        assert_eq!(declared_screen_of(&unlisted), Some((176, 220)));
+        assert!(!runs_at_declared_screen(&unlisted, ScreenMode::Auto));
+        assert!(runs_at_declared_screen(&unlisted, ScreenMode::Declared));
+
+        // 프레임과 같은 크기를 선언했으면 고를 것이 없다
+        assert_eq!(declared_screen_of(&archive("PD004541", "240*320")), None);
+        assert!(!runs_at_declared_screen(&archive("PD004541", "240*320"), ScreenMode::Auto));
+    }
+
     /// 실제 게임 패키지에서 표지/이름이 뽑히는지 확인 (env로 경로 지정 시에만 실행).
     #[test]
     fn extract_metadata_smoke() {
@@ -199,7 +296,7 @@ mod tests {
 
 /// Creates the right emulator for the given file, mirroring the
 /// format-detection branch in wie_cli / wie_web.
-pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8]) -> anyhow::Result<Box<dyn Emulator>> {
+pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8], screen_mode: ScreenMode) -> anyhow::Result<Box<dyn Emulator>> {
     // iOS forbids generating code at run time, so both platforms run ARM code through the portable executor:
     // the title is translated once into pre-decoded steps. It counts instructions like the stepping interpreter,
     // so thread scheduling (and every frame under WIE_VCLOCK) is the same; `WIE_AOT=off` selects the interpreter for A/B runs.
@@ -216,6 +313,12 @@ pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8]) 
         let files: BTreeMap<String, Vec<u8>> = normalize_archive(extract_zip(buf)?);
 
         if KtfEmulator::loadable_archive(&files) {
+            // 로더는 선언 크기로 화면을 바꿔 달라고 요청한다. 래퍼가 있으면 그 크기의 화면이 되고, 없으면 요청이 무시된다.
+            let platform: Box<dyn Platform> = if runs_at_declared_screen(&files, screen_mode) {
+                Box::new(platform::LcdPlatform::new(platform))
+            } else {
+                platform
+            };
             Ok(Box::new(KtfEmulator::from_archive(platform, files, options)?))
         } else if LgtEmulator::loadable_archive(&files) {
             Ok(Box::new(LgtEmulator::from_archive(platform, files, options)?))
@@ -236,7 +339,7 @@ pub fn create_emulator(platform: Box<dyn Platform>, filename: &str, buf: &[u8]) 
             // after the archive.
             let stem = &filename[filename.rfind(['/', '\\']).map(|x| x + 1).unwrap_or(0)..];
             let jar_name = format!("{}.jar", stem.trim_end_matches(".zip"));
-            create_emulator(platform, &jar_name, jar)
+            create_emulator(platform, &jar_name, jar, screen_mode)
         } else {
             anyhow::bail!("Unknown archive format")
         }

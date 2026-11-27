@@ -35,14 +35,18 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -140,7 +144,7 @@ class MainActivity : ComponentActivity() {
                     onDismissError = { errorMessage = null },
                     onPlay = { entry ->
                         entry.dataDir.mkdirs()
-                        if (start(entry.gameFile.readBytes(), entry.filename, entry.dataDir)) {
+                        if (start(entry.gameFile.readBytes(), entry.filename, entry.dataDir, entry.screenMode)) {
                             errorMessage = null
                             cheats = CheatState(this@MainActivity, entry.id)
                             screen = Screen.Emulator
@@ -157,6 +161,11 @@ class MainActivity : ComponentActivity() {
                     onDelete = { entry ->
                         library.delete(entry)
                         CheatState.forget(this@MainActivity, entry.id)
+                        games = library.list()
+                    },
+                    declaredScreen = { entry -> library.declaredScreen(entry) },
+                    onScreenMode = { entry, mode ->
+                        library.setScreenMode(entry, mode)
                         games = library.list()
                     },
                     onSettings = { showSettings = true },
@@ -204,8 +213,8 @@ class MainActivity : ComponentActivity() {
     }
 
     /** 게임 로드 및 에뮬레이터 시작 + 사운드·속도 설정 적용 */
-    private fun start(bytes: ByteArray, filename: String, dataDir: File): Boolean {
-        val ok = WipiNative.nativeStart(bytes, filename, dataDir.absolutePath, soundfontPath())
+    private fun start(bytes: ByteArray, filename: String, dataDir: File, screenMode: Int): Boolean {
+        val ok = WipiNative.nativeStart(bytes, filename, dataDir.absolutePath, soundfontPath(), screenMode)
         if (ok) {
             val (pcm, midi) = settings.effectiveVolumes()
             WipiNative.nativeSetVolume(pcm, midi)
@@ -492,11 +501,16 @@ class MainActivity : ComponentActivity() {
         onPlay: (GameEntry) -> Unit,
         onImport: (Uri) -> Boolean,
         onDelete: (GameEntry) -> Unit,
+        declaredScreen: (GameEntry) -> Int,
+        onScreenMode: (GameEntry, Int) -> Unit,
         onSettings: () -> Unit,
     ) {
         var importError by remember { mutableStateOf<String?>(null) }
         val readError = stringResource(R.string.import_read_error)
         var deleteTarget by remember { mutableStateOf<GameEntry?>(null) }
+        // 길게 누른 게임의 메뉴. menuScreen은 그 게임이 선언한 화면 크기 (0이면 화면 크기 항목을 숨김)
+        var menuTarget by remember { mutableStateOf<GameEntry?>(null) }
+        var menuScreen by remember { mutableStateOf(0) }
 
         // zip/jar만 (iOS allowedContentTypes 대응). octet-stream은 파일관리자가 타입을 모르는 경우 대비
         val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -546,37 +560,74 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(top = 16.dp),
                     ) {
                         items(games, key = { it.id }) { game ->
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.combinedClickable(
-                                    onClick = { onPlay(game) },
-                                    onLongClick = { deleteTarget = game },
-                                ),
-                            ) {
-                                Box(
-                                    modifier = Modifier.size(100.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
-                                    contentAlignment = Alignment.Center,
+                            Box {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.combinedClickable(
+                                        onClick = { onPlay(game) },
+                                        onLongClick = {
+                                            menuScreen = declaredScreen(game)
+                                            menuTarget = game
+                                        },
+                                    ),
                                 ) {
-                                    game.cover?.let {
-                                        Image(
-                                            bitmap = it.asImageBitmap(),
-                                            contentDescription = null,
-                                            filterQuality = FilterQuality.None, // 저해상도 아이콘을 nearest로 확대
-                                            modifier = Modifier.fillMaxSize().padding(8.dp),
+                                    Box(
+                                        modifier = Modifier.size(100.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        game.cover?.let {
+                                            Image(
+                                                bitmap = it.asImageBitmap(),
+                                                contentDescription = null,
+                                                filterQuality = FilterQuality.None, // 저해상도 아이콘을 nearest로 확대
+                                                modifier = Modifier.fillMaxSize().padding(8.dp),
+                                            )
+                                        } ?: Icon(
+                                            Icons.Filled.SportsEsports, null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(32.dp),
                                         )
-                                    } ?: Icon(
-                                        Icons.Filled.SportsEsports, null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(32.dp),
+                                    }
+                                    Text(
+                                        game.name,
+                                        fontSize = 12.sp,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(top = 4.dp).height(34.dp),
                                     )
                                 }
-                                Text(
-                                    game.name,
-                                    fontSize = 12.sp,
-                                    maxLines = 2,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(top = 4.dp).height(34.dp),
-                                )
+
+                                // 길게 누르기 메뉴 (iOS contextMenu 대응): 화면 크기 설정 + 삭제
+                                DropdownMenu(expanded = menuTarget?.id == game.id, onDismissRequest = { menuTarget = null }) {
+                                    if (menuScreen != 0) {
+                                        val modes = listOf(
+                                            SCREEN_MODE_AUTO to stringResource(R.string.screen_size_auto),
+                                            SCREEN_MODE_DECLARED to
+                                                stringResource(R.string.screen_size_declared, menuScreen shr 16, menuScreen and 0xffff),
+                                            SCREEN_MODE_FRAME to stringResource(R.string.screen_size_frame),
+                                        )
+                                        for ((mode, label) in modes) {
+                                            DropdownMenuItem(
+                                                text = { Text(label) },
+                                                leadingIcon = {
+                                                    if (game.screenMode == mode) Icon(Icons.Filled.Check, null) else Spacer(Modifier.size(24.dp))
+                                                },
+                                                onClick = {
+                                                    menuTarget = null
+                                                    onScreenMode(game, mode)
+                                                },
+                                            )
+                                        }
+                                        HorizontalDivider()
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
+                                        onClick = {
+                                            menuTarget = null
+                                            deleteTarget = game
+                                        },
+                                    )
+                                }
                             }
                         }
                     }

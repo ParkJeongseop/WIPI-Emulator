@@ -14,9 +14,17 @@ enum WipiCore {
     }
 
     /// 게임 로드 및 에뮬레이터 스레드 시작. soundfontPath가 빈 문자열이면 MIDI 무음.
-    static func start(gameData: Data, filename: String, dataDir: String, soundfontPath: String) -> Bool {
+    /// screenMode: 0=자동(내장 표의 타이틀만 선언 크기), 1=선언 크기, 2=240×320.
+    static func start(gameData: Data, filename: String, dataDir: String, soundfontPath: String, screenMode: Int) -> Bool {
         gameData.withUnsafeBytes { (buf: UnsafeRawBufferPointer) in
-            wipi_start(buf.bindMemory(to: UInt8.self).baseAddress, gameData.count, filename, dataDir, soundfontPath)
+            wipi_start(buf.bindMemory(to: UInt8.self).baseAddress, gameData.count, filename, dataDir, soundfontPath, UInt32(screenMode))
+        }
+    }
+
+    /// 게임이 선언한 화면 크기 ((너비 << 16) | 높이). 선언이 없거나 240×320이면 0 — 화면 크기 설정을 보일지 판단용.
+    static func declaredScreen(gameData: Data) -> UInt32 {
+        gameData.withUnsafeBytes { (buf: UnsafeRawBufferPointer) in
+            wipi_game_screen(buf.bindMemory(to: UInt8.self).baseAddress, gameData.count)
         }
     }
 

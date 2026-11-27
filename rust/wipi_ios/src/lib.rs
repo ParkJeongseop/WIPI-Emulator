@@ -7,7 +7,7 @@ use std::{
     path::PathBuf,
 };
 
-use wipi_core::{extract_metadata, session};
+use wipi_core::{ScreenMode, declared_screen, extract_metadata, session};
 
 pub use wipi_core::{SCREEN_HEIGHT, SCREEN_WIDTH};
 
@@ -27,7 +27,7 @@ pub extern "C" fn wipi_init() {
 
 /// # Safety
 /// `game_data`는 `game_data_len` 바이트의 유효한 버퍼, 나머지는 유효한 C 문자열이어야 한다.
-/// `soundfont_path`는 빈 문자열이면 MIDI 무음.
+/// `soundfont_path`는 빈 문자열이면 MIDI 무음. `screen_mode`는 0 = 자동, 1 = 선언 크기, 2 = 프레임 크기.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn wipi_start(
     game_data: *const u8,
@@ -35,6 +35,7 @@ pub unsafe extern "C" fn wipi_start(
     filename: *const c_char,
     data_dir: *const c_char,
     soundfont_path: *const c_char,
+    screen_mode: u32,
 ) -> bool {
     let result = (|| -> anyhow::Result<()> {
         if game_data.is_null() || filename.is_null() || data_dir.is_null() || soundfont_path.is_null() {
@@ -47,7 +48,13 @@ pub unsafe extern "C" fn wipi_start(
         let soundfont_path = unsafe { CStr::from_ptr(soundfont_path) }.to_str()?;
         let soundfont_path = (!soundfont_path.is_empty()).then(|| PathBuf::from(soundfont_path));
 
-        session::start(filename, game_data, PathBuf::from(data_dir), soundfont_path)
+        session::start(
+            filename,
+            game_data,
+            PathBuf::from(data_dir),
+            soundfont_path,
+            ScreenMode::from_raw(screen_mode),
+        )
     })();
 
     match result {
@@ -321,4 +328,19 @@ pub unsafe extern "C" fn wipi_game_name(game_data: *const u8, game_data_len: usi
     }
     unsafe { std::ptr::copy_nonoverlapping(name.as_ptr(), out, name.len()) };
     name.len()
+}
+
+/// 게임 패키지가 선언한 화면 크기 `(가로 << 16) | 세로`. 프레임(240×320)과 같거나 선언이 없으면 0 —
+/// 호스트는 0이 아닐 때만 게임별 화면 크기 설정을 보여준다.
+///
+/// # Safety
+/// `game_data`는 `game_data_len` 바이트의 유효한 버퍼여야 한다.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn wipi_game_screen(game_data: *const u8, game_data_len: usize) -> u32 {
+    if game_data.is_null() {
+        return 0;
+    }
+    let buf = unsafe { std::slice::from_raw_parts(game_data, game_data_len) };
+
+    declared_screen(buf).map_or(0, |(width, height)| (width << 16) | height)
 }

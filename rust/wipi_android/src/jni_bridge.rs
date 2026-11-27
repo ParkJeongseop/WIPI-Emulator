@@ -9,7 +9,7 @@ use jni::{
     sys::{jboolean, jint, jlong, jlongArray, jstring},
 };
 
-use wipi_core::session;
+use wipi_core::{ScreenMode, session};
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeStart(
@@ -19,6 +19,7 @@ pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeStart(
     filename: JString,
     data_dir: JString,
     soundfont_path: JString,
+    screen_mode: jint,
 ) -> jboolean {
     let result = (|| -> anyhow::Result<()> {
         let game_data = env.convert_byte_array(&game_data)?;
@@ -27,7 +28,13 @@ pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeStart(
         let soundfont_path: String = env.get_string(&soundfont_path)?.into();
         let soundfont_path = (!soundfont_path.is_empty()).then(|| PathBuf::from(soundfont_path));
 
-        session::start(filename, game_data, PathBuf::from(data_dir), soundfont_path)
+        session::start(
+            filename,
+            game_data,
+            PathBuf::from(data_dir),
+            soundfont_path,
+            ScreenMode::from_raw(screen_mode as u32),
+        )
     })();
 
     match result {
@@ -240,6 +247,16 @@ pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeGameName<'a>
     game_data: JByteArray,
 ) -> jni::sys::jbyteArray {
     extract_blob(&mut env, game_data, |meta| meta.name_euckr)
+}
+
+/// 게임 패키지가 선언한 화면 크기 `(가로 << 16) | 세로`. 프레임(240×320)과 같거나 선언이 없으면 0 —
+/// 호스트는 0이 아닐 때만 게임별 화면 크기 설정을 보여준다.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_parkjeongseop_wipi_WipiNative_nativeGameScreen(env: JNIEnv, _class: JClass, game_data: JByteArray) -> jint {
+    env.convert_byte_array(&game_data)
+        .ok()
+        .and_then(|buf| wipi_core::declared_screen(&buf))
+        .map_or(0, |(width, height)| ((width << 16) | height) as jint)
 }
 
 fn extract_blob(env: &mut JNIEnv, game_data: JByteArray, pick: fn(wipi_core::GameMetadata) -> Option<Vec<u8>>) -> jni::sys::jbyteArray {
